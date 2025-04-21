@@ -1,0 +1,12 @@
+# Ignore all __pycache__ folders
+__pycache__/
+
+# Ignore all .pyc and .pyo files (compiled Python)
+*.pyc
+*.pyo
+
+# Ignore all __init__.py files everywhere
+__init__.py
+
+# Ignore a specific filename (e.g. xyz.py) anywhere in the project
+graph_metadata
