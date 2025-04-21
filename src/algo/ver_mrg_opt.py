@@ -318,7 +318,3 @@ if __name__ == "__main__":
         user="neo4j",
         password="your_password"
     )
-
-localhost="neo4j://localhost:7687"
-username="SahilShrivastava"
-password="SahilShrivastava@123"
