@@ -26,12 +26,12 @@ if "did_optimize" not in st.session_state:
 # --- Sidebar (always visible) ---
 with st.sidebar:
     st.header("🔧 Optimization Options")
-    do_tr    = st.checkbox("Transitive Reduction", value=True)
-    do_merge = st.checkbox("Merge Equivalent Nodes", value=True)
+    do_tr    = st.checkbox("Transitive Reduction", value=True, help="Transitive Reduction simplifies a Directed Acyclic Graph (DAG) by removing redundant edges while preserving the reachability between nodes. It makes the graph cleaner and easier to interpret without changing its core structure.")
+    do_merge = st.checkbox("Merge Equivalent Nodes", value=True, help="Use this feature with caution, as node merging can lead to overlapping data or functions. Ensure that it enhances your graph’s functionality without introducing unintended side effects.")
     optimize = st.button("Optimize")
     st.markdown("---")
     st.subheader("🚀 Neo4j Export")
-    uri  = st.text_input("Bolt URI",      value="bolt://localhost:7687")
+    uri  = st.text_input("Bolt/Neo4j+s URI",      value="bolt://localhost:7687")
     usr  = st.text_input("Username",      value="neo4j")
     pwd  = st.text_input("Password",      type="password")
     push = st.button("Push to Neo4j")
