@@ -1,18 +1,39 @@
 # app.py
-import math
+
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
 import json
+import math
 from collections import defaultdict, Counter
 from datetime import datetime
 from io import BytesIO
 from neo4j import GraphDatabase
 from networkx.drawing.nx_agraph import graphviz_layout
 
-# --- DAGOptimizer class (wrapped down to just the methods we need) ---
+# --- Persisted state setup ---
+if "edges" not in st.session_state:
+    st.session_state.edges = None
+if "optimizer" not in st.session_state:
+    st.session_state.optimizer = None
+if "did_optimize" not in st.session_state:
+    st.session_state.did_optimize = False
 
+# --- Sidebar (always visible) ---
+with st.sidebar:
+    st.header("🔧 Optimization Options")
+    do_tr    = st.checkbox("Transitive Reduction", value=True)
+    do_merge = st.checkbox("Merge Equivalent Nodes", value=True)
+    optimize = st.button("Optimize")
+    st.markdown("---")
+    st.subheader("🚀 Neo4j Export")
+    uri  = st.text_input("Bolt URI",      value="bolt://localhost:7687")
+    usr  = st.text_input("Username",      value="neo4j")
+    pwd  = st.text_input("Password",      type="password")
+    push = st.button("Push to Neo4j")
+
+# --- DAGOptimizer class ---
 class DAGOptimizer:
     def __init__(self, edges):
         self.original_graph = nx.DiGraph()
@@ -27,14 +48,14 @@ class DAGOptimizer:
     def merge_equivalent_nodes(self):
         sig = defaultdict(list)
         for n in self.graph.nodes:
-            parents = frozenset(self.graph.predecessors(n))
+            parents  = frozenset(self.graph.predecessors(n))
             children = frozenset(self.graph.successors(n))
             sig[(parents, children)].append(n)
 
         mapping = {}
-        merged = nx.DiGraph()
+        merged  = nx.DiGraph()
         for group in sig.values():
-            merged_node = group[0] if len(group)==1 else "+".join(sorted(map(str,group)))
+            merged_node = group[0] if len(group)==1 else "+".join(sorted(map(str, group)))
             for n in group:
                 mapping[n] = merged_node
 
@@ -46,8 +67,8 @@ class DAGOptimizer:
 
     def evaluate_graph_metrics(self, G):
         m = {}
-        m["num_nodes"] = G.number_of_nodes()
-        m["num_edges"] = G.number_of_edges()
+        m["num_nodes"]  = G.number_of_nodes()
+        m["num_edges"]  = G.number_of_edges()
         m["num_leaf_nodes"] = sum(1 for n in G.nodes if G.out_degree(n)==0)
         m["longest_path_length"] = (
             nx.dag_longest_path_length(G)
@@ -55,13 +76,10 @@ class DAGOptimizer:
         )
         try:
             lengths = dict(nx.all_pairs_shortest_path_length(G))
-            shortest = min(
-                l
-                for targets in lengths.values()
-                for l in targets.values()
-                if l>0
+            sp = min(
+                l for targets in lengths.values() for l in targets.values() if l>0
             )
-            m["shortest_path_length"] = shortest
+            m["shortest_path_length"] = sp
         except:
             m["shortest_path_length"] = "N/A"
 
@@ -87,11 +105,11 @@ class DAGOptimizer:
         om = self.evaluate_graph_metrics(self.original_graph)
         nm = self.evaluate_graph_metrics(self.graph)
         return {
-            "timestamp": datetime.now().isoformat(),
-            "original_edges": list(self.original_graph.edges()),
-            "optimized_edges": list(self.graph.edges()),
+            "timestamp":        datetime.now().isoformat(),
+            "original_edges":   list(self.original_graph.edges()),
+            "optimized_edges":  list(self.graph.edges()),
             "original_metrics": om,
-            "optimized_metrics": nm,
+            "optimized_metrics":nm,
             "changed_metrics": {
                 k: {"original": om[k], "optimized": nm[k]}
                 for k in om if om[k] != nm[k]
@@ -113,47 +131,35 @@ class DAGOptimizer:
             ses.write_transaction(_tx)
         drv.close()
 
-# --- Persisted state setup ---
+# --- Main UI ---
 
-if "edges" not in st.session_state:
-    st.session_state.edges = None
-if "optimizer" not in st.session_state:
-    st.session_state.optimizer = None
-
-# --- App UI ---
-
-st.title("🔧 DAG Optimizer")
+st.title("🗺️ DAG Optimizer")
 
 # 1) Input mode
 mode = st.radio(
     "How would you like to provide your DAG?",
-    ("Upload CSV", "Paste edge list", "Random DAG"),
+    ("Upload CSV", "Paste edge list", "Random DAG")
 )
 
 new_edges = []
 if mode == "Upload CSV":
-    up = st.file_uploader("Upload CSV with columns: source,target", type="csv")
+    up = st.file_uploader("CSV with columns: source,target", type="csv")
     if up:
         import pandas as pd
         df = pd.read_csv(up)
-        if {"source", "target"}.issubset(df.columns):
-            new_edges = list(df[["source","target"]].itertuples(index=False,name=None))
+        if {"source","target"}.issubset(df.columns):
+            new_edges = list(df[["source","target"]].itertuples(index=False, name=None))
         else:
-            st.error("CSV must have columns 'source' and 'target'")
-
+            st.error("CSV needs 'source' and 'target' columns.")
 elif mode == "Paste edge list":
-    text = st.text_area("One edge per line, comma‑separated, e.g. `A,B`")
-    if text:
+    txt = st.text_area("One `A,B` per line")
+    if txt:
         try:
-            new_edges = [
-                tuple(line.strip().split(","))
-                for line in text.splitlines() if line.strip()
-            ]
+            new_edges = [tuple(l.split(",")) for l in txt.splitlines() if l.strip()]
         except:
-            st.error("Could not parse edges; check format.")
-
-else:  # Random DAG
-    n = st.number_input("Number of nodes", min_value=2, value=6, step=1)
+            st.error("Could not parse your list.")
+else:
+    n = st.number_input("Number of nodes", min_value=2, value=6)
     p = st.slider("Edge probability", 0.0, 1.0, 0.3)
     if st.button("Generate Random DAG"):
         nodes = list(range(n))
@@ -162,15 +168,15 @@ else:  # Random DAG
                 if random.random() < p:
                     new_edges.append((str(nodes[i]), str(nodes[j])))
 
-# 2) Persist edges & (re)initialize optimizer
+# 2) Persist & (re)initialize validator
 if new_edges:
-    if st.session_state.edges is None or st.session_state.edges != new_edges:
+    if st.session_state.edges != new_edges:
         st.session_state.edges = new_edges
         try:
             st.session_state.optimizer = DAGOptimizer(new_edges)
+            st.session_state.did_optimize = False
         except ValueError as e:
             st.error(str(e))
-            st.stop()
 
 if st.session_state.edges is None:
     st.info("Specify or generate a DAG to get started.")
@@ -178,80 +184,73 @@ if st.session_state.edges is None:
 
 opt = st.session_state.optimizer
 
-# 3) Sidebar form for optimization & Neo4j push
-with st.sidebar:
-    st.header("Options")
-    form = st.form("opt_form")
-    do_tr    = form.checkbox("Transitive Reduction", value=True)
-    do_merge = form.checkbox("Merge Equivalent Nodes", value=True)
-    submit   = form.form_submit_button("Optimize")
-    st.markdown("---")
-    uri  = st.text_input("Neo4j URI",      value="bolt://localhost:7687")
-    usr  = st.text_input("Neo4j Username", value="neo4j")
-    pwd  = st.text_input("Neo4j Password", type="password")
-    push  = st.button("Push to Neo4j")
+# 3) Handle Optimize click
+if optimize:
+    if opt:
+        if do_tr:    opt.transitive_reduction()
+        if do_merge: opt.merge_equivalent_nodes()
+        st.session_state.did_optimize = True
+        st.success("✅ Optimization complete!")
+    else:
+        st.warning("Load a valid DAG before optimizing.")
 
-# 4) Apply optimization on form submit
-if submit:
-    if do_tr:    opt.transitive_reduction()
-    if do_merge: opt.merge_equivalent_nodes()
-    st.success("Optimization applied!")
-
-# 5) Push to Neo4j if requested
+# 4) Handle Neo4j push
 if push:
-    try:
-        opt.push_to_neo4j(uri, usr, pwd)
-        st.sidebar.success("Pushed to Neo4j ✅")
-    except Exception as e:
-        st.sidebar.error(f"Neo4j error: {e}")
+    if st.session_state.did_optimize:
+        try:
+            opt.push_to_neo4j(uri, usr, pwd)
+            st.success("✅ Pushed to Neo4j")
+        except Exception as e:
+            st.error(f"Neo4j error: {e}")
+    else:
+        st.warning("Optimize first, then push.")
 
-# 6) Show metric table
-orig_m = opt.evaluate_graph_metrics(opt.original_graph)
-opt_m  = opt.evaluate_graph_metrics(opt.graph)
-df = {
-    "Metric": list(orig_m.keys()),
-    "Original": list(orig_m.values()),
-    "Optimized": list(opt_m.values()),
-}
-st.subheader("📊 Metrics Comparison")
-st.table(df)
+# 5) Only show metrics & viz after Optimize
+if st.session_state.did_optimize:
+    # Metrics comparison
+    om = opt.evaluate_graph_metrics(opt.original_graph)
+    nm = opt.evaluate_graph_metrics(opt.graph)
+    df = {
+        "Metric":    list(om.keys()),
+        "Original":  list(om.values()),
+        "Optimized": list(nm.values()),
+    }
+    st.subheader("📊 Metrics Comparison")
+    st.table(df)
 
-# 7) Visualize side‑by‑side
-st.subheader("🖼️ Graph Visualization")
-fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-diffs = {k:(orig_m[k], opt_m[k]) for k in orig_m if orig_m[k]!=opt_m[k]}
-diff_text = (
-    "\n".join(f"{k}: {a} → {b}" for k,(a,b) in diffs.items())
-    or "No changes"
-)
-for G, ax, title in [
-    (opt.original_graph, axes[0], "Original"),
-    (opt.graph, axes[1], "Optimized")
-]:
-    try:
-        pos = graphviz_layout(G, prog="dot")
-    except:
-        pos = nx.spring_layout(G, seed=1)
-    nx.draw(G, pos, with_labels=True, ax=ax,
-            node_color=("lightblue" if title=="Original" else "lightgreen"))
-    ax.set_title(title)
-fig.suptitle("Changed Metrics:\n" + diff_text, fontsize=10)
-st.pyplot(fig)
+    # Visualization
+    st.subheader("🖼️ Graph Visualization")
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    diffs = {k: (om[k], nm[k]) for k in om if om[k] != nm[k]}
+    diff_text = "\n".join(f"{k}: {a} → {b}" for k,(a,b) in diffs.items()) or "No changes"
+    for G, ax, title in [
+        (opt.original_graph, axes[0], "Original"),
+        (opt.graph,          axes[1], "Optimized")
+    ]:
+        try:
+            pos = graphviz_layout(G, prog="dot")
+        except:
+            pos = nx.spring_layout(G, seed=1)
+        nx.draw(G, pos, with_labels=True, ax=ax,
+                node_color=("lightblue" if title=="Original" else "lightgreen"))
+        ax.set_title(title)
+    fig.suptitle("Changed Metrics:\n" + diff_text, fontsize=10)
+    st.pyplot(fig)
 
-# 8) Download metadata & image
-meta = opt.metadata()
-st.download_button(
-    "📥 Download metadata (JSON)",
-    data=json.dumps(meta, indent=2),
-    file_name=f"dag_metadata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-    mime="application/json"
-)
-buf = BytesIO()
-fig.savefig(buf, format="png")
-buf.seek(0)
-st.download_button(
-    "📥 Download visualization (PNG)",
-    data=buf,
-    file_name="dag_optimization.png",
-    mime="image/png"
-)
+    # Downloads
+    meta = opt.metadata()
+    st.download_button(
+        "📥 Download metadata (JSON)",
+        data=json.dumps(meta, indent=2),
+        file_name=f"dag_metadata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        mime="application/json"
+    )
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    st.download_button(
+        "📥 Download visualization (PNG)",
+        data=buf,
+        file_name="dag_optimization.png",
+        mime="image/png"
+    )
