@@ -11,6 +11,8 @@ from datetime import datetime
 from io import BytesIO
 from neo4j import GraphDatabase
 from networkx.drawing.nx_agraph import graphviz_layout
+from src.dag_optimiser.dag_class import *
+
 
 # --- Persisted state setup ---
 if "edges" not in st.session_state:
@@ -33,103 +35,6 @@ with st.sidebar:
     pwd  = st.text_input("Password",      type="password")
     push = st.button("Push to Neo4j")
 
-# --- DAGOptimizer class ---
-class DAGOptimizer:
-    def __init__(self, edges):
-        self.original_graph = nx.DiGraph()
-        self.original_graph.add_edges_from(edges)
-        if not nx.is_directed_acyclic_graph(self.original_graph):
-            raise ValueError("The input graph must be a DAG.")
-        self.graph = self.original_graph.copy()
-
-    def transitive_reduction(self):
-        self.graph = nx.transitive_reduction(self.graph)
-
-    def merge_equivalent_nodes(self):
-        sig = defaultdict(list)
-        for n in self.graph.nodes:
-            parents  = frozenset(self.graph.predecessors(n))
-            children = frozenset(self.graph.successors(n))
-            sig[(parents, children)].append(n)
-
-        mapping = {}
-        merged  = nx.DiGraph()
-        for group in sig.values():
-            merged_node = group[0] if len(group)==1 else "+".join(sorted(map(str, group)))
-            for n in group:
-                mapping[n] = merged_node
-
-        for u, v in self.graph.edges():
-            nu, nv = mapping[u], mapping[v]
-            if nu != nv:
-                merged.add_edge(nu, nv)
-        self.graph = merged
-
-    def evaluate_graph_metrics(self, G):
-        m = {}
-        m["num_nodes"]  = G.number_of_nodes()
-        m["num_edges"]  = G.number_of_edges()
-        m["num_leaf_nodes"] = sum(1 for n in G.nodes if G.out_degree(n)==0)
-        m["longest_path_length"] = (
-            nx.dag_longest_path_length(G)
-            if nx.is_directed_acyclic_graph(G) else "N/A"
-        )
-        try:
-            lengths = dict(nx.all_pairs_shortest_path_length(G))
-            sp = min(
-                l for targets in lengths.values() for l in targets.values() if l>0
-            )
-            m["shortest_path_length"] = sp
-        except:
-            m["shortest_path_length"] = "N/A"
-
-        m["depth"] = m["longest_path_length"]
-        levels = Counter(len(nx.ancestors(G, n)) for n in G.nodes)
-        m["width"] = max(levels.values()) if levels else 0
-
-        comps = nx.number_weakly_connected_components(G)
-        m["cyclomatic_complexity"] = G.number_of_edges() - G.number_of_nodes() + 2*comps
-
-        degs = [d for _, d in G.degree()]
-        freq = Counter(degs)
-        m["degree_distribution"] = dict(freq)
-        total = sum(freq.values())
-        m["degree_entropy"] = (
-            -sum((f/total)*math.log2(f/total) for f in freq.values())
-            if total>0 else 0
-        )
-        m["density"] = nx.density(G)
-        return m
-
-    def metadata(self):
-        om = self.evaluate_graph_metrics(self.original_graph)
-        nm = self.evaluate_graph_metrics(self.graph)
-        return {
-            "timestamp":        datetime.now().isoformat(),
-            "original_edges":   list(self.original_graph.edges()),
-            "optimized_edges":  list(self.graph.edges()),
-            "original_metrics": om,
-            "optimized_metrics":nm,
-            "changed_metrics": {
-                k: {"original": om[k], "optimized": nm[k]}
-                for k in om if om[k] != nm[k]
-            }
-        }
-
-    def push_to_neo4j(self, uri, user, password):
-        drv = GraphDatabase.driver(uri, auth=(user, password))
-        def _tx(tx):
-            for n in self.graph.nodes():
-                tx.run("MERGE (x:Node {name:$n})", n=n)
-            for u, v in self.graph.edges():
-                tx.run(
-                    "MATCH (a:Node {name:$u}), (b:Node {name:$v}) "
-                    "MERGE (a)-[:DEPENDS_ON]->(b)",
-                    u=u, v=v
-                )
-        with drv.session() as ses:
-            ses.write_transaction(_tx)
-        drv.close()
 
 # --- Main UI ---
 
