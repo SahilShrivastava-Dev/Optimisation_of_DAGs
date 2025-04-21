@@ -1,0 +1,111 @@
+{
+    "timestamp": "2025-04-08_11-25-56",
+    "original_edges": [
+        [
+            "A",
+            "B"
+        ],
+        [
+            "A",
+            "C"
+        ],
+        [
+            "A",
+            "E"
+        ],
+        [
+            "B",
+            "D"
+        ],
+        [
+            "C",
+            "D"
+        ],
+        [
+            "D",
+            "E"
+        ]
+    ],
+    "optimized_edges": [
+        [
+            "A",
+            "B+C"
+        ],
+        [
+            "B+C",
+            "D"
+        ],
+        [
+            "D",
+            "E"
+        ]
+    ],
+    "original_metrics": {
+        "num_nodes": 5,
+        "num_edges": 6,
+        "num_leaf_nodes": 1,
+        "longest_path_length": 3,
+        "shortest_path_length": 1,
+        "depth": 3,
+        "width": 2,
+        "cyclomatic_complexity": 3,
+        "degree_distribution": {
+            "3": 2,
+            "2": 3
+        },
+        "degree_entropy": 0.9709505944546686,
+        "density": 0.3
+    },
+    "optimized_metrics": {
+        "num_nodes": 4,
+        "num_edges": 3,
+        "num_leaf_nodes": 1,
+        "longest_path_length": 3,
+        "shortest_path_length": 1,
+        "depth": 3,
+        "width": 1,
+        "cyclomatic_complexity": 1,
+        "degree_distribution": {
+            "1": 2,
+            "2": 2
+        },
+        "degree_entropy": 1.0,
+        "density": 0.25
+    },
+    "changed_metrics": {
+        "num_nodes": {
+            "original": 5,
+            "optimized": 4
+        },
+        "num_edges": {
+            "original": 6,
+            "optimized": 3
+        },
+        "width": {
+            "original": 2,
+            "optimized": 1
+        },
+        "cyclomatic_complexity": {
+            "original": 3,
+            "optimized": 1
+        },
+        "degree_distribution": {
+            "original": {
+                "3": 2,
+                "2": 3
+            },
+            "optimized": {
+                "1": 2,
+                "2": 2
+            }
+        },
+        "degree_entropy": {
+            "original": 0.9709505944546686,
+            "optimized": 1.0
+        },
+        "density": {
+            "original": 0.3,
+            "optimized": 0.25
+        }
+    }
+}
