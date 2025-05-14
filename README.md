@@ -59,7 +59,7 @@ A Streamlit‑based dashboard for loading, optimizing and visualizing Directed A
 From the project root, run:
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run app.py
 ```
 
 1. **Load or generate** a DAG:  
