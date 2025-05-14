@@ -1,5 +1,5 @@
 # streamlit_app.py
-
+import pandas as pd
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -42,19 +42,74 @@ st.title("🗺️ DAG Optimizer")
 # 1) Input mode
 mode = st.radio(
     "How would you like to provide your DAG?",
-    ("Upload CSV", "Paste edge list", "Random DAG")
+    ("Upload CSV or Excel", "Paste edge list", "Random DAG")
 )
 
 new_edges = []
-if mode == "Upload CSV":
-    up = st.file_uploader("CSV with columns: source,target", type="csv")
-    if up:
-        import pandas as pd
-        df = pd.read_csv(up)
-        if {"source","target"}.issubset(df.columns):
-            new_edges = list(df[["source","target"]].itertuples(index=False, name=None))
+if mode == "Upload CSV or Excel":
+    # up = st.file_uploader("Upload file with columns: source,target", type=["csv", "xlsx"])
+    # if up:
+        # try:
+        #     if up.name.endswith(".csv"):
+        #         df = pd.read_csv(up)
+        #     elif up.name.endswith(".xlsx"):
+        #         df = pd.read_excel(up)
+        #     else:
+        #         st.error("Unsupported file type.")
+        #         df = None
+        #
+        #     if df is not None:
+        #         st.success("File uploaded successfully.")
+        #         source_col = st.selectbox("Select source node column", df.columns, key="source_select")
+        #         target_col = st.selectbox("Select target node column", df.columns, key="target_select",
+        #                                   index=min(1, len(df.columns) - 1))
+        #
+        #         if source_col and target_col:
+        #             try:
+        #                 new_edges = list(df[[source_col, target_col]].itertuples(index=False, name=None))
+        #                 st.success(f"Edges loaded using '{source_col}' as source and '{target_col}' as target.")
+        #             except Exception as e:
+        #                 st.error(f"Could not extract edges: {e}")
+        #
+        # except Exception as e:
+        #     st.error(f"Error reading file: {e}")
+    if uploaded_file:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
         else:
-            st.error("CSV needs 'source' and 'target' columns.")
+            df = pd.read_excel(uploaded_file)
+
+        st.write("Preview of uploaded data:")
+        st.dataframe(df.head())
+
+        cols = df.columns.tolist()
+        source_col = st.selectbox("Select Source Column (e.g. parent node)", cols)
+        target_col = st.selectbox("Select Target Column (e.g. child node)", cols)
+
+        if st.button("Build and Optimize DAG"):
+            # Step 1: Build list of edges
+            edges = list(zip(df[source_col], df[target_col]))
+
+            try:
+                # Step 2: Initialize DAGOptimizer
+                optimizer = DAGOptimizer(edges)
+
+                # Step 3: Apply transformations
+                if do_tr:
+                    optimizer.transitive_reduction()
+                if do_merge:
+                    optimizer.merge_equivalent_nodes()
+
+                # Step 4: Store state and show output
+                st.session_state.optimizer = optimizer
+                st.session_state.edges = list(optimizer.graph.edges())
+                st.session_state.did_optimize = True
+
+                st.success("✅ DAG successfully optimized!")
+                st.json(st.session_state.edges)
+
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
 elif mode == "Paste edge list":
     txt = st.text_area("One `A,B` per line")
     if txt:
