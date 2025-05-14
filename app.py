@@ -1,4 +1,4 @@
-# app.py
+# streamlit_app.py
 import pandas as pd
 import streamlit as st
 import networkx as nx
@@ -54,6 +54,11 @@ if mode == "Upload CSV or Excel":
 
         st.write("Preview of uploaded data:")
         st.dataframe(df.head())
+
+        # Report name filter
+        if "report_name" in df.columns:
+            selected_report = st.selectbox("Filter by report_name", df["report_name"].unique())
+            df = df[df["report_name"] == selected_report]
 
         cols = df.columns.tolist()
         source_col = st.selectbox("Select Source Column (e.g. parent node)", cols)
