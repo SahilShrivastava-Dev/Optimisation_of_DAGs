@@ -15,6 +15,27 @@ from networkx.drawing.nx_agraph import graphviz_layout
 # DAG optimizer
 from src.dag_optimiser.dag_class import DAGOptimizer
 
+# --- Helper: aggregate_edge_classes ---
+def aggregate_edge_classes(df, source_col, target_col, class_col=None):
+    """
+    Collapse DataFrame rows into unique edges and collect classes per edge.
+    Returns:
+      edges: list of (u, v) tuples
+      edge_attrs: dict mapping (u, v) -> sorted list of classes
+    """
+    access_map = defaultdict(set)
+    for _, row in df.iterrows():
+        u = row[source_col]
+        v = row[target_col]
+        if class_col and class_col in df.columns:
+            c = row[class_col]
+            access_map[(u, v)].add(c)
+        else:
+            access_map[(u, v)]  # ensure key exists
+    edges = list(access_map.keys())
+    edge_attrs = {e: sorted(access_map[e]) for e in access_map}
+    return edges, edge_attrs
+
 # --- Session state persistence ---
 if "edges" not in st.session_state:
     st.session_state.edges = None
@@ -64,38 +85,32 @@ if mode == "Upload CSV or Excel":
         st.write("Preview:")
         st.dataframe(df.head())
 
-        # report_name filter
+        # optional filters
         if "report_name" in df.columns:
             sel = st.selectbox("Filter by report_name", df['report_name'].unique())
             df = df[df['report_name'] == sel]
+
         # classes filter
-        if "classes" in df.columns:
+        has_classes = 'classes' in df.columns
+        if has_classes:
             cls_choices = df['classes'].unique().tolist()
             sel_classes = st.multiselect("Include access classes", cls_choices, default=cls_choices)
             df = df[df['classes'].isin(sel_classes)]
 
-        # pick columns
+        # select columns
         cols = df.columns.tolist()
         source_col = st.selectbox("Source Column", cols)
         target_col = st.selectbox("Target Column", cols)
 
         if st.button("Build DAG"):
-            # aggregate classes per edge
-            access_map = defaultdict(set)
-            for _, row in df.iterrows():
-                u = row[source_col]; v = row[target_col]
-                c = row['classes'] if 'classes' in df.columns else None
-                if c is not None:
-                    access_map[(u, v)].add(c)
-                else:
-                    access_map[(u, v)]
-            new_edges = list(access_map.keys())
-            edge_attrs = {e: sorted(list(access_map[e])) for e in access_map}
+            # aggregate edges and classes
+            new_edges, edge_attrs = aggregate_edge_classes(df, source_col, target_col, 'classes' if has_classes else None)
 
             # show components
             G0 = nx.DiGraph(new_edges)
             comps = nx.number_weakly_connected_components(G0)
             st.info(f"Uploaded DAG has {comps} weakly connected component(s).")
+
             # cycle handling
             if not nx.is_directed_acyclic_graph(G0):
                 if handle_cycles == "Show error":
@@ -110,7 +125,7 @@ if mode == "Upload CSV or Excel":
 
             # init optimizer
             try:
-                st.session_state.optimizer = DAGOptimizer(new_edges)
+                st.session_state.optimizer = DAGOptimizer(new_edges, edge_attrs)
                 st.session_state.edges = new_edges
                 st.session_state.edge_attrs = edge_attrs
                 st.session_state.did_optimize = False
@@ -121,20 +136,15 @@ if mode == "Upload CSV or Excel":
 elif mode == "Paste edge list":
     txt = st.text_area("One `source,target,classes` per line")
     if st.button("Build DAG from text"):
-        access_map = defaultdict(set)
+        rows = []
         for line in txt.splitlines():
             parts = [p.strip() for p in line.split(",")]
             if len(parts) >= 2:
-                u, v = parts[0], parts[1]
-                c = parts[2] if len(parts) > 2 else None
-                if c:
-                    access_map[(u, v)].add(c)
-                else:
-                    access_map[(u, v)]
-        new_edges = list(access_map.keys())
-        edge_attrs = {e: sorted(list(access_map[e])) for e in access_map}
+                rows.append({ 'source': parts[0], 'target': parts[1], 'classes': parts[2] if len(parts)>2 else None })
+        df = pd.DataFrame(rows)
+        new_edges, edge_attrs = aggregate_edge_classes(df, 'source', 'target', 'classes')
         try:
-            st.session_state.optimizer = DAGOptimizer(new_edges)
+            st.session_state.optimizer = DAGOptimizer(new_edges, edge_attrs)
             st.session_state.edges = new_edges
             st.session_state.edge_attrs = edge_attrs
             st.session_state.did_optimize = False
@@ -146,15 +156,15 @@ else:
     n = st.number_input("Node count", 2, 100, 6)
     p = st.slider("Edge probability", 0.0, 1.0, 0.3)
     if st.button("Generate Random DAG"):
-        nodes = [str(i) for i in range(n)]
         access_map = defaultdict(set)
+        nodes = [str(i) for i in range(n)]
         for i in range(n):
             for j in range(i+1, n):
                 if random.random() < p:
-                    access_map[(nodes[i], nodes[j])]
+                    access_map[(nodes[i], nodes[j])]  # no classes
         new_edges = list(access_map.keys())
         edge_attrs = {e: [] for e in new_edges}
-        st.session_state.optimizer = DAGOptimizer(new_edges)
+        st.session_state.optimizer = DAGOptimizer(new_edges, edge_attrs)
         st.session_state.edges = new_edges
         st.session_state.edge_attrs = edge_attrs
         st.session_state.did_optimize = False
