@@ -1,0 +1,277 @@
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Upload, FileText, Sparkles, X } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { Edge } from '../types'
+import axios from 'axios'
+
+interface InputSectionProps {
+  edges: Edge[]
+  setEdges: (edges: Edge[]) => void
+  loading: boolean
+}
+
+type InputMode = 'upload' | 'paste' | 'random'
+
+const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
+  const [mode, setMode] = useState<InputMode>('upload')
+  const [textInput, setTextInput] = useState('')
+  const [numNodes, setNumNodes] = useState(10)
+  const [edgeProbability, setEdgeProbability] = useState(0.3)
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await axios.post('/api/parse-csv', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      const data = response.data
+      const preview = data.preview
+      const sourceCol = data.source_column
+      const targetCol = data.target_column
+
+      const newEdges: Edge[] = preview.map((row: any) => ({
+        source: String(row[sourceCol]),
+        target: String(row[targetCol]),
+        classes: row.classes ? [row.classes] : []
+      }))
+
+      setEdges(newEdges)
+      toast.success(`Loaded ${newEdges.length} edges from ${file.name}`)
+    } catch (error) {
+      toast.error('Failed to parse file')
+      console.error(error)
+    }
+  }
+
+  const handlePasteInput = () => {
+    const lines = textInput.trim().split('\n')
+    const newEdges: Edge[] = []
+
+    for (const line of lines) {
+      const parts = line.split(',').map(s => s.trim())
+      if (parts.length >= 2) {
+        newEdges.push({
+          source: parts[0],
+          target: parts[1],
+          classes: parts[2] ? [parts[2]] : []
+        })
+      }
+    }
+
+    if (newEdges.length > 0) {
+      setEdges(newEdges)
+      toast.success(`Created ${newEdges.length} edges`)
+    } else {
+      toast.error('No valid edges found')
+    }
+  }
+
+  const handleRandomGeneration = async () => {
+    try {
+      const response = await axios.post('/api/random-dag', {
+        num_nodes: numNodes,
+        edge_probability: edgeProbability
+      })
+
+      setEdges(response.data.edges)
+      toast.success(`Generated random DAG with ${response.data.edges.length} edges`)
+    } catch (error) {
+      toast.error('Failed to generate random DAG')
+      console.error(error)
+    }
+  }
+
+  const clearEdges = () => {
+    setEdges([])
+    setTextInput('')
+    toast.success('Cleared all edges')
+  }
+
+  const modes = [
+    { id: 'upload', label: 'Upload File', icon: Upload },
+    { id: 'paste', label: 'Paste Edges', icon: FileText },
+    { id: 'random', label: 'Random DAG', icon: Sparkles }
+  ]
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-slate-800">Input Your Graph</h2>
+        <p className="text-slate-500">Choose how you'd like to provide your DAG</p>
+      </div>
+
+      {/* Mode Selection */}
+      <div className="grid grid-cols-3 gap-4">
+        {modes.map((m) => {
+          const Icon = m.icon
+          const isActive = mode === m.id
+          return (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id as InputMode)}
+              disabled={loading}
+              className={`
+                relative p-6 rounded-2xl transition-all duration-300
+                ${isActive 
+                  ? 'glass-morphism ring-2 ring-blue-500 shadow-lg' 
+                  : 'bg-white/50 hover:bg-white/70 border border-slate-200'
+                }
+                ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer card-hover'}
+              `}
+            >
+              <div className="flex flex-col items-center space-y-3">
+                <div className={`
+                  p-3 rounded-xl transition-colors
+                  ${isActive 
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600' 
+                    : 'bg-slate-100'
+                  }
+                `}>
+                  <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-slate-600'}`} />
+                </div>
+                <span className={`font-semibold ${isActive ? 'text-blue-600' : 'text-slate-700'}`}>
+                  {m.label}
+                </span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Input Content */}
+      <motion.div
+        key={mode}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-morphism p-8 rounded-2xl"
+      >
+        {mode === 'upload' && (
+          <div className="space-y-4">
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-blue-500 transition-colors bg-slate-50/50">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <Upload className="w-12 h-12 text-slate-400" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-slate-700">Drop your CSV or Excel file here</p>
+                  <p className="text-sm text-slate-500 mt-1">or click to browse</p>
+                </div>
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleFileUpload}
+                disabled={loading}
+              />
+            </label>
+            <p className="text-xs text-slate-500 text-center">
+              Expected format: columns named "source" and "target"
+            </p>
+          </div>
+        )}
+
+        {mode === 'paste' && (
+          <div className="space-y-4">
+            <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder="source1,target1&#10;source2,target2,class_name&#10;source3,target3"
+              disabled={loading}
+              className="w-full h-64 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+            />
+            <button
+              onClick={handlePasteInput}
+              disabled={loading || !textInput.trim()}
+              className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Build DAG
+            </button>
+          </div>
+        )}
+
+        {mode === 'random' && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Number of Nodes: {numNodes}
+                </label>
+                <input
+                  type="range"
+                  min="2"
+                  max="50"
+                  value={numNodes}
+                  onChange={(e) => setNumNodes(Number(e.target.value))}
+                  disabled={loading}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Edge Probability: {edgeProbability.toFixed(2)}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={edgeProbability}
+                  onChange={(e) => setEdgeProbability(Number(e.target.value))}
+                  disabled={loading}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleRandomGeneration}
+              disabled={loading}
+              className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Generate Random DAG
+            </button>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Current Edges Summary */}
+      {edges.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-morphism p-6 rounded-2xl flex items-center justify-between"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-green-100 rounded-xl">
+              <FileText className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800">Graph Loaded</p>
+              <p className="text-sm text-slate-500">{edges.length} edges ready for optimization</p>
+            </div>
+          </div>
+          <button
+            onClick={clearEdges}
+            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-red-500" />
+          </button>
+        </motion.div>
+      )}
+    </motion.section>
+  )
+}
+
+export default InputSection
+

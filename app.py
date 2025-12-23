@@ -119,8 +119,20 @@ if mode == "Upload CSV or Excel":
                         st.write(" → ".join(cyc) + " → " + cyc[0])
                     st.stop()
                 else:
-                    for cyc in nx.simple_cycles(G0):
-                        G0.remove_edge(cyc[-1], cyc[0])
+                    # Remove a minimal feedback arc set (approximation) so the graph becomes a DAG
+                    try:
+                        from networkx.algorithms.approximation import minimum_feedback_arc_set
+                        fas = minimum_feedback_arc_set(G0)
+                        G0.remove_edges_from(fas)
+                        st.info(f"Automatically removed {len(fas)} edge(s) to break cycles: {fas}")
+                    except ImportError:
+                        # Fallback – remove first real edge of each cycle
+                        for cyc in nx.simple_cycles(G0):
+                            cycle_edges = list(zip(cyc, cyc[1:] + [cyc[0]]))
+                            for u, v in cycle_edges:
+                                if G0.has_edge(u, v):
+                                    G0.remove_edge(u, v)
+                                    break
                     new_edges = list(G0.edges())
 
             # init optimizer
@@ -242,13 +254,21 @@ if st.session_state.did_optimize:
     st.pyplot(fig)
 
     meta = opt.metadata()
+    # make edge_attributes JSON‑serialisable (tuple keys → string)
+    if 'edge_attributes' in meta:
+        meta['edge_attributes'] = {f"{u}->{v}": cls for (u, v), cls in meta['edge_attributes'].items()}
+
     st.download_button(
         "Download metadata (JSON)",
         data=json.dumps(meta, indent=2),
-        file_name=f"meta_{datetime.now().strftime('%Y%m%d%H%M%S')}.json",
+        file_name=f"meta_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
         mime="application/json"
     )
+
     buf = BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+
     fig.savefig(buf, format='png')
     buf.seek(0)
     st.download_button(
