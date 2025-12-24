@@ -1,99 +1,143 @@
-# 🚀 Quick Start Guide
+# 🚀 Quick Start - AI-Powered DAG Optimization
 
-Get up and running with the DAG Optimizer in 5 minutes!
+## ✅ Setup Complete!
 
-## Step 1: Install Dependencies
+Your OpenRouter API is already configured with:
+- **API Key:** Securely stored in `backend/.env` ✅
+- **Model:** Google Gemini 2.0 Flash (FREE, recommended) ✅
 
-Run the installation script:
-```bash
-install_dependencies.bat
+---
+
+## 🎯 Start the Application
+
+### 1. Start Backend (Terminal 1)
+
+```cmd
+cd backend
+python main.py
 ```
 
-This will install:
-- Python packages (FastAPI, NetworkX, etc.)
-- Node.js packages (React, TypeScript, etc.)
-
-**Note:** Make sure you have Graphviz installed on your system:
-- Download from: https://graphviz.org/download/
-- Add to PATH during installation
-
-## Step 2: Start the Application
-
-### Easy Way (Recommended)
-Double-click `start_all.bat` - This starts both backend and frontend automatically!
-
-### Manual Way
-Open two terminals:
-
-**Terminal 1 - Backend:**
-```bash
-start_backend.bat
+**You should see:**
+```
+INFO: Uvicorn running on http://0.0.0.0:8000
 ```
 
-**Terminal 2 - Frontend:**
-```bash
-start_frontend.bat
+### 2. Start Frontend (Terminal 2)
+
+```cmd
+cd frontend
+npm run dev
 ```
 
-## Step 3: Open Your Browser
+**You should see:**
+```
+Local: http://localhost:5173
+```
 
-Navigate to: `http://localhost:5173`
+### 3. Open App
 
-## Step 4: Try It Out!
+Open browser: **http://localhost:5173**
 
-### Option 1: Upload a CSV File
-1. Click "Upload File"
-2. Drop your CSV with columns: `source`, `target`
-3. Click "Build DAG"
+---
 
-### Option 2: Generate Random DAG
-1. Click "Random DAG"
-2. Adjust sliders (try: 10 nodes, 0.3 probability)
-3. Click "Generate Random DAG"
+## 🖼️ Upload a DAG Image
 
-### Option 3: Paste Edges
-1. Click "Paste Edges"
-2. Enter edges like:
-   ```
-   A,B
-   B,C
-   A,C
-   ```
-3. Click "Build DAG"
+1. Click **"Upload Image"** tab
+2. Drop your DAG image
+3. AI extracts nodes & edges automatically! ✨
+4. See interactive graph preview
+5. Click **"Optimize"** to optimize the DAG
+6. Export to Neo4j if needed
 
-## Step 5: Optimize!
+---
 
-1. Keep both options checked:
-   - ✅ Transitive Reduction
-   - ✅ Merge Equivalent Nodes
+## 🤖 Change AI Model
 
-2. Click **"Optimize Graph"**
+Want to try a different model?
 
-3. View your results:
-   - Improvement stats
-   - Metrics comparison
-   - Before/after visualizations
+```cmd
+cd backend
+python setup_api_key.py
+```
 
-## 🎉 That's It!
+**Choose from 4 FREE models:**
+1. Google Gemini 2.0 Flash ⭐ (current, recommended)
+2. NVIDIA Nemotron Nano (fastest)
+3. Meta Llama 3.2 Vision (most accurate)
+4. Qwen 2 VL (best for photos)
 
-You're now ready to optimize your DAGs!
+See `FREE_AI_MODELS_GUIDE.md` for detailed comparison.
 
-## Common Issues
+---
 
-### "Port already in use"
-- Close other applications using ports 8000 or 5173
-- Or modify the ports in the config files
+## 📁 Project Structure
 
-### "Module not found"
-- Run `install_dependencies.bat` again
-- Make sure you have Python 3.8+ and Node.js 18+
+```
+backend/
+  ├── .env              # API key (NEVER commit to Git!)
+  ├── main.py           # FastAPI backend
+  └── setup_api_key.py  # Model selection tool
 
-### "Graphviz not found"
-- Install Graphviz from: https://graphviz.org/download/
-- Add to system PATH
-- Restart your terminal/command prompt
+frontend/
+  ├── src/              # React components
+  └── package.json      # Dependencies
 
-## Need Help?
+*.md                    # Documentation
+```
 
-Check out `README_NEW.md` for detailed documentation!
+---
 
+## 🔒 Security Note
+
+**`.env` file is in `.gitignore`** - Your API key is safe!
+
+Never commit API keys to Git. The `.env` file stays local only.
+
+---
+
+## 🆘 Troubleshooting
+
+### Backend won't start?
+
+```cmd
+cd backend
+pip install -r requirements.txt
+python main.py
+```
+
+### Frontend won't start?
+
+```cmd
+cd frontend
+npm install
+npm run dev
+```
+
+### Image upload not working?
+
+Check backend terminal - should show:
+```
+🔑 OpenRouter API key found
+🤖 Using model: google/gemini-2.0-flash-exp:free
+```
+
+If not, check `backend/.env` file exists with your API key.
+
+---
+
+## 📚 More Info
+
+- **Model Guide:** `FREE_AI_MODELS_GUIDE.md`
+- **OpenRouter Setup:** `OPENROUTER_SETUP.md`
+- **Migration Details:** `OPENROUTER_MIGRATION_SUMMARY.md`
+
+---
+
+## 🎉 You're Ready!
+
+1. ✅ Backend running on port 8000
+2. ✅ Frontend running on port 5173
+3. ✅ OpenRouter API configured
+4. ✅ Free AI model selected
+
+**Start uploading DAG images!** 🚀

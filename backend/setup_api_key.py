@@ -1,12 +1,24 @@
 """
-Setup script to configure OpenRouter API key and model selection
-Run this once to set up your API credentials
+Setup script to configure OpenRouter model selection
+Reads API key from .env file (keeps it secure!)
 """
 
 import os
+from dotenv import load_dotenv
 
-# Your API key
-API_KEY = "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"
+# Load existing .env if it exists
+load_dotenv()
+
+# Get API key from environment or prompt user
+API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+if not API_KEY:
+    print("⚠️  No API key found!")
+    print()
+    API_KEY = input("Enter your OpenRouter API key: ").strip()
+    if not API_KEY:
+        print("❌ API key is required. Exiting.")
+        exit(1)
 
 # Available FREE vision models
 FREE_MODELS = {
