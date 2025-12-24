@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { Edge } from '../types'
 import axios from 'axios'
 import InteractiveGraph from './InteractiveGraph'
+import { ImageUploadWithProgress } from './ImageUploadWithProgress'
 
 interface InputSectionProps {
   edges: Edge[]
@@ -350,37 +351,12 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
         )}
 
         {mode === 'image' && (
-          <div className="space-y-4">
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-purple-300 rounded-xl cursor-pointer hover:border-purple-500 transition-colors bg-gradient-to-br from-purple-50 to-pink-50">
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <ImageIcon className="w-12 h-12 text-purple-400" />
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-slate-700">Drop DAG image here</p>
-                  <p className="text-sm text-slate-500 mt-1">or click to browse</p>
-                  <p className="text-xs text-purple-600 mt-2 font-medium">🤖 AI will extract the graph structure</p>
-                </div>
-              </div>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={loading || loadingImageExtraction}
-              />
-            </label>
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold text-purple-900">📸 Upload a DAG Image</p>
-              <ul className="text-xs text-purple-700 space-y-1 ml-4 list-disc">
-                <li>Photo of a whiteboard diagram</li>
-                <li>Screenshot of a graph</li>
-                <li>Hand-drawn DAG</li>
-                <li>Any image with nodes and arrows</li>
-              </ul>
-              <p className="text-xs text-purple-600 mt-2">
-                💡 AI will detect nodes and edges automatically!
-              </p>
-            </div>
-          </div>
+          <ImageUploadWithProgress
+            onEdgesExtracted={(extractedEdges) => {
+              setEdges(extractedEdges)
+            }}
+            onBackendError={setBackendError}
+          />
         )}
 
         {mode === 'paste' && (
