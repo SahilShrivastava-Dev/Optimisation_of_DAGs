@@ -15,3 +15,6 @@ graph_metadata
 .env
 *.env
 backend/.env
+
+# Test files that access API keys
+test_*.py
