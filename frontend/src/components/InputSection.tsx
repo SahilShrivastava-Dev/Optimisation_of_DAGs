@@ -23,6 +23,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
   const [graphStats, setGraphStats] = useState<{nodes: number, components: number} | null>(null)
   const [loadingStats, setLoadingStats] = useState(false)
   const [loadingImageExtraction, setLoadingImageExtraction] = useState(false)
+  const [imageExtractionStatus, setImageExtractionStatus] = useState<any>(null)
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -99,46 +100,89 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
 
     // Check if it's an image
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file')
+      toast.error('Please upload an image file (JPG, PNG, etc.)')
       return
     }
 
     setLoadingImageExtraction(true)
-    const loadingToast = toast.loading('Extracting DAG from image using AI vision...')
+    const loadingToast = toast.loading('🤖 AI is analyzing your image...')
 
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('method', 'ai')
 
       const response = await axios.post('/api/extract-from-image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000  // 60 second timeout for AI processing
       })
 
-      if (response.data.success) {
-        const extractedEdges = response.data.edges
+      const data = response.data
+
+      if (data.success) {
+        const extractedEdges = data.edges
         setEdges(extractedEdges)
-        toast.success(response.data.message, { id: loadingToast })
+        toast.success(data.message, { id: loadingToast })
+        
+        // Show which method was used
+        const method = data.method === 'openai' ? 'GPT-4 Vision' : 'Local AI'
+        toast(`✨ Extracted using ${method}`, { icon: '🤖', duration: 3000 })
       } else {
-        toast.error(response.data.message || 'Could not extract DAG from image', { id: loadingToast })
-        toast('💡 Tip: Make sure the image shows a clear DAG with labeled nodes and arrows', {
-          duration: 5000,
-          icon: '💡'
-        })
+        // Handle different error types
+        const errorType = data.error || 'unknown'
+        
+        if (errorType === 'setup_required' || errorType === 'dependencies_missing') {
+          toast.error('AI models not installed on backend', { id: loadingToast })
+          toast(
+            <div className="space-y-2">
+              <p className="font-semibold">To enable AI extraction:</p>
+              <p className="text-xs">Option 1: pip install openai</p>
+              <p className="text-xs">Option 2: pip install transformers torch pillow</p>
+              <p className="text-xs mt-2">Then restart the backend</p>
+            </div>,
+            {
+              duration: 8000,
+              icon: '📦'
+            }
+          )
+        } else if (errorType === 'invalid_graph') {
+          toast.error('Could not extract a valid graph', { id: loadingToast })
+          toast('💡 Try a clearer image with labeled nodes (A, B, C) and visible arrows (→)', {
+            duration: 6000,
+            icon: '💡'
+          })
+        } else if (errorType === 'extraction_failed') {
+          toast.error('Extraction failed', { id: loadingToast })
+          toast('💡 Make sure: Clear nodes, visible arrows, good lighting', {
+            duration: 5000,
+            icon: '💡'
+          })
+        } else {
+          toast.error(data.message || 'Could not extract DAG from image', { id: loadingToast })
+        }
       }
     } catch (error: any) {
       console.error('Image extraction error:', error)
-      const errorMsg = error.response?.data?.detail || 'Failed to extract DAG from image'
-      toast.error(errorMsg, { id: loadingToast })
       
-      if (errorMsg.includes('not installed')) {
-        toast('📦 AI models need to be installed on the backend', {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error('Request timed out - image processing took too long', { id: loadingToast })
+        toast('💡 Try a simpler image or check backend logs', { duration: 5000, icon: '⏱️' })
+      } else if (error.response?.status === 500) {
+        toast.error('Backend error during extraction', { id: loadingToast })
+        toast('Check if backend is running and AI models are installed', {
           duration: 6000,
           icon: '⚠️'
         })
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        toast.error('Cannot connect to backend', { id: loadingToast })
+        toast('Make sure backend is running on port 8000', { duration: 5000, icon: '🔌' })
+      } else {
+        const errorMsg = error.response?.data?.message || error.message || 'Unknown error occurred'
+        toast.error(errorMsg, { id: loadingToast })
       }
     } finally {
       setLoadingImageExtraction(false)
+      // Reset file input
+      event.target.value = ''
     }
   }
 

@@ -354,10 +354,11 @@ async def push_to_neo4j(request: Neo4jPushRequest):
 
 @app.post("/api/extract-from-image")
 async def extract_dag_from_image(
-    file: UploadFile = File(...),
-    method: str = "simple"  # "simple" (pattern matching) or "ai" (vision model)
+    file: UploadFile = File(...)
 ):
     """Extract DAG structure from uploaded image"""
+    tmp_path = None
+    
     try:
         # Save uploaded file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
@@ -365,66 +366,149 @@ async def extract_dag_from_image(
             tmp.write(content)
             tmp_path = tmp.name
         
+        # Try to use AI extraction
         try:
-            if method == "ai":
-                # Use Vision-Language Model (requires setup)
-                try:
-                    from image_dag_extractor import ImageDAGExtractor
-                    
-                    # Try OpenAI first (if API key available)
-                    api_key = os.getenv("OPENAI_API_KEY")
-                    if api_key:
-                        extractor = ImageDAGExtractor(method="openai", api_key=api_key)
-                    else:
-                        # Fallback to Hugging Face (free but needs models)
-                        extractor = ImageDAGExtractor(method="huggingface")
-                    
-                    result = extractor.extract(tmp_path)
-                    is_valid, error = ImageDAGExtractor.validate_dag(result)
-                    
-                    if not is_valid:
-                        raise HTTPException(status_code=400, detail=f"Invalid graph extracted: {error}")
-                    
-                    # Convert to Edge format
-                    edges = [
-                        {"source": e["source"], "target": e["target"], "classes": []}
-                        for e in result["edges"]
-                    ]
-                    
-                    return {
-                        "success": True,
-                        "method": "ai_vision",
-                        "edges": edges,
-                        "nodes": result["nodes"],
-                        "message": f"Extracted {len(result['nodes'])} nodes and {len(edges)} edges using AI vision"
+            # Attempt to import the extractor
+            try:
+                from image_dag_extractor import ImageDAGExtractor
+            except ImportError:
+                # Module not found, return helpful message
+                return {
+                    "success": False,
+                    "error": "setup_required",
+                    "message": "AI vision models not installed",
+                    "installation": {
+                        "option1": "pip install openai (for GPT-4 Vision - best quality)",
+                        "option2": "pip install transformers torch pillow (for free local models)",
+                        "tip": "After installation, restart the backend server"
                     }
-                    
+                }
+            
+            # Try OpenAI first (if API key available)
+            api_key = os.getenv("OPENAI_API_KEY")
+            
+            if api_key:
+                try:
+                    extractor = ImageDAGExtractor(method="openai", api_key=api_key)
+                    result = extractor.extract(tmp_path)
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": "openai_failed",
+                        "message": f"OpenAI extraction failed: {str(e)}",
+                        "suggestion": "Check your API key or try local models: pip install transformers torch pillow"
+                    }
+            else:
+                # Try Hugging Face models
+                try:
+                    extractor = ImageDAGExtractor(method="huggingface")
+                    result = extractor.extract(tmp_path)
                 except ImportError as e:
                     return {
                         "success": False,
-                        "error": "AI vision models not installed. Install with: pip install transformers torch pillow"
+                        "error": "dependencies_missing",
+                        "message": "AI model dependencies not installed",
+                        "missing": str(e),
+                        "install": "pip install transformers torch pillow"
+                    }
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": "extraction_failed",
+                        "message": f"Could not extract graph: {str(e)}",
+                        "suggestion": "Make sure the image has clear nodes and arrows"
                     }
             
-            else:
-                # Simple method: Return instruction for user to manually input
+            # Validate extracted graph
+            is_valid, error = ImageDAGExtractor.validate_dag(result)
+            
+            if not is_valid:
                 return {
                     "success": False,
-                    "method": "simple",
-                    "message": "Automatic extraction requires AI vision models. Please install: pip install transformers torch pillow openai",
-                    "instruction": "For now, please manually enter the nodes and edges from your image using the 'Paste' method."
+                    "error": "invalid_graph",
+                    "message": f"Extracted graph is invalid: {error}",
+                    "suggestion": "Try a clearer image or use manual input"
                 }
+            
+            # Convert to Edge format
+            edges = [
+                {"source": e["source"], "target": e["target"], "classes": []}
+                for e in result["edges"]
+            ]
+            
+            return {
+                "success": True,
+                "method": "openai" if api_key else "huggingface",
+                "edges": edges,
+                "nodes": result["nodes"],
+                "message": f"✅ Extracted {len(result['nodes'])} nodes and {len(edges)} edges"
+            }
         
-        finally:
-            # Clean up temp file
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+        except Exception as e:
+            return {
+                "success": False,
+                "error": "unexpected_error",
+                "message": f"Unexpected error: {str(e)}",
+                "trace": str(type(e).__name__)
+            }
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Image extraction error: {str(e)}")
+        return {
+            "success": False,
+            "error": "file_error",
+            "message": f"Could not process uploaded file: {str(e)}"
+        }
+    
+    finally:
+        # Clean up temp file
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass  # Ignore cleanup errors
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/image-extraction/status")
+async def check_image_extraction_status():
+    """Check if image extraction dependencies are available"""
+    status = {
+        "image_extraction_available": False,
+        "openai_available": False,
+        "huggingface_available": False,
+        "methods": []
+    }
+    
+    # Check OpenAI
+    try:
+        import openai
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key:
+            status["openai_available"] = True
+            status["methods"].append("GPT-4 Vision (best quality)")
+    except ImportError:
+        pass
+    
+    # Check Hugging Face
+    try:
+        import transformers
+        import torch
+        status["huggingface_available"] = True
+        status["methods"].append("Florence-2/BLIP-2 (free, local)")
+    except ImportError:
+        pass
+    
+    status["image_extraction_available"] = status["openai_available"] or status["huggingface_available"]
+    
+    if not status["image_extraction_available"]:
+        status["installation_instructions"] = {
+            "option1": "pip install openai (then set OPENAI_API_KEY)",
+            "option2": "pip install transformers torch pillow"
+        }
+    
+    return status
 
 if __name__ == "__main__":
     import uvicorn
