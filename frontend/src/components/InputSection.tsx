@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileText, Sparkles, X, Eye } from 'lucide-react'
+import { Upload, FileText, Sparkles, X, Eye, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Edge } from '../types'
 import axios from 'axios'
+import InteractiveGraph from './InteractiveGraph'
 
 interface InputSectionProps {
   edges: Edge[]
@@ -11,17 +12,17 @@ interface InputSectionProps {
   loading: boolean
 }
 
-type InputMode = 'upload' | 'paste' | 'random'
+type InputMode = 'upload' | 'paste' | 'random' | 'image'
 
 const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
   const [mode, setMode] = useState<InputMode>('upload')
   const [textInput, setTextInput] = useState('')
   const [numNodes, setNumNodes] = useState(10)
   const [edgeProbability, setEdgeProbability] = useState(0.3)
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
-  const [loadingPreview, setLoadingPreview] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
   const [graphStats, setGraphStats] = useState<{nodes: number, components: number} | null>(null)
+  const [loadingStats, setLoadingStats] = useState(false)
+  const [loadingImageExtraction, setLoadingImageExtraction] = useState(false)
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -92,10 +93,59 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
     }
   }
 
-  const generatePreview = async (edgeList: Edge[]) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Check if it's an image
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      return
+    }
+
+    setLoadingImageExtraction(true)
+    const loadingToast = toast.loading('Extracting DAG from image using AI vision...')
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('method', 'ai')
+
+      const response = await axios.post('/api/extract-from-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      if (response.data.success) {
+        const extractedEdges = response.data.edges
+        setEdges(extractedEdges)
+        toast.success(response.data.message, { id: loadingToast })
+      } else {
+        toast.error(response.data.message || 'Could not extract DAG from image', { id: loadingToast })
+        toast('💡 Tip: Make sure the image shows a clear DAG with labeled nodes and arrows', {
+          duration: 5000,
+          icon: '💡'
+        })
+      }
+    } catch (error: any) {
+      console.error('Image extraction error:', error)
+      const errorMsg = error.response?.data?.detail || 'Failed to extract DAG from image'
+      toast.error(errorMsg, { id: loadingToast })
+      
+      if (errorMsg.includes('not installed')) {
+        toast('📦 AI models need to be installed on the backend', {
+          duration: 6000,
+          icon: '⚠️'
+        })
+      }
+    } finally {
+      setLoadingImageExtraction(false)
+    }
+  }
+
+  const fetchGraphStats = async (edgeList: Edge[]) => {
     if (edgeList.length === 0) return
     
-    setLoadingPreview(true)
+    setLoadingStats(true)
     try {
       // Validate and get graph stats
       const validateResponse = await axios.post('/api/validate', {
@@ -108,31 +158,17 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
           components: validateResponse.data.num_components
         })
       }
-
-      // Generate a simple preview visualization (without any optimization)
-      const vizResponse = await axios.post('/api/optimize', {
-        edges: edgeList,
-        transitive_reduction: false,
-        merge_nodes: false,
-        handle_cycles: 'remove'
-      })
-
-      if (vizResponse.data.success) {
-        setPreviewImage(vizResponse.data.original.visualization)
-      }
     } catch (error) {
-      console.error('Preview generation failed:', error)
-      toast.error('Could not generate preview')
+      console.error('Failed to fetch graph stats:', error)
     } finally {
-      setLoadingPreview(false)
+      setLoadingStats(false)
     }
   }
 
   useEffect(() => {
     if (edges.length > 0) {
-      generatePreview(edges)
+      fetchGraphStats(edges)
     } else {
-      setPreviewImage(null)
       setGraphStats(null)
     }
   }, [edges])
@@ -140,13 +176,13 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
   const clearEdges = () => {
     setEdges([])
     setTextInput('')
-    setPreviewImage(null)
     setGraphStats(null)
     toast.success('Cleared all edges')
   }
 
   const modes = [
-    { id: 'upload', label: 'Upload File', icon: Upload },
+    { id: 'upload', label: 'Upload CSV', icon: Upload },
+    { id: 'image', label: 'Upload Image', icon: ImageIcon },
     { id: 'paste', label: 'Paste Edges', icon: FileText },
     { id: 'random', label: 'Random DAG', icon: Sparkles }
   ]
@@ -163,7 +199,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
       </div>
 
       {/* Mode Selection */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {modes.map((m) => {
           const Icon = m.icon
           const isActive = mode === m.id
@@ -228,6 +264,40 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
             <p className="text-xs text-slate-500 text-center">
               Expected format: columns named "source" and "target"
             </p>
+          </div>
+        )}
+
+        {mode === 'image' && (
+          <div className="space-y-4">
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-purple-300 rounded-xl cursor-pointer hover:border-purple-500 transition-colors bg-gradient-to-br from-purple-50 to-pink-50">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <ImageIcon className="w-12 h-12 text-purple-400" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-slate-700">Drop DAG image here</p>
+                  <p className="text-sm text-slate-500 mt-1">or click to browse</p>
+                  <p className="text-xs text-purple-600 mt-2 font-medium">🤖 AI will extract the graph structure</p>
+                </div>
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={loading || loadingImageExtraction}
+              />
+            </label>
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-semibold text-purple-900">📸 Upload a DAG Image</p>
+              <ul className="text-xs text-purple-700 space-y-1 ml-4 list-disc">
+                <li>Photo of a whiteboard diagram</li>
+                <li>Screenshot of a graph</li>
+                <li>Hand-drawn DAG</li>
+                <li>Any image with nodes and arrows</li>
+              </ul>
+              <p className="text-xs text-purple-600 mt-2">
+                💡 AI will detect nodes and edges automatically!
+              </p>
+            </div>
           </div>
         )}
 
@@ -338,7 +408,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
             </div>
           </div>
 
-          {/* Graph Preview */}
+          {/* Interactive Graph Preview */}
           {showPreview && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -347,32 +417,22 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
               className="space-y-3"
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-700">Graph Preview</h3>
-                {loadingPreview && (
-                  <span className="text-xs text-slate-500 animate-pulse">Generating preview...</span>
+                <h3 className="text-sm font-semibold text-slate-700">Interactive Graph Preview</h3>
+                {loadingStats && (
+                  <span className="text-xs text-slate-500 animate-pulse">Loading stats...</span>
                 )}
               </div>
               
-              {previewImage ? (
-                <div className="relative rounded-xl overflow-hidden bg-white border border-slate-200 shadow-inner">
-                  <img
-                    src={`data:image/png;base64,${previewImage}`}
-                    alt="Graph Preview"
-                    className="w-full h-auto max-h-96 object-contain"
-                  />
-                </div>
-              ) : loadingPreview ? (
-                <div className="flex items-center justify-center h-48 bg-slate-50 rounded-xl">
-                  <div className="text-center space-y-2">
-                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-sm text-slate-500">Loading preview...</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-48 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-400">Preview not available</p>
-                </div>
-              )}
+              <InteractiveGraph 
+                edges={edges} 
+                isOptimized={false}
+              />
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700 font-medium">
+                  💡 <strong>Tip:</strong> Drag nodes to rearrange • Scroll to zoom • Click and drag background to pan
+                </p>
+              </div>
             </motion.div>
           )}
         </motion.div>

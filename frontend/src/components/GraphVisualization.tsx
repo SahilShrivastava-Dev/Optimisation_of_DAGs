@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { Download, Maximize2, Image } from 'lucide-react'
+import { Download, Maximize2, Image, Activity } from 'lucide-react'
 import { OptimizationResult } from '../types'
 import { useState } from 'react'
+import InteractiveGraph from './InteractiveGraph'
 
 interface GraphVisualizationProps {
   result: OptimizationResult
@@ -9,6 +10,7 @@ interface GraphVisualizationProps {
 
 const GraphVisualization = ({ result }: GraphVisualizationProps) => {
   const [fullscreen, setFullscreen] = useState<'original' | 'optimized' | null>(null)
+  const [viewMode, setViewMode] = useState<'interactive' | 'static'>('interactive')
 
   const downloadImage = (base64: string, filename: string) => {
     const link = document.createElement('a')
@@ -78,27 +80,70 @@ const GraphVisualization = ({ result }: GraphVisualizationProps) => {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
       >
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-pink-100 rounded-lg">
-            <Image className="w-6 h-6 text-pink-600" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-pink-100 rounded-lg">
+              <Image className="w-6 h-6 text-pink-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800">Graph Visualization</h3>
           </div>
-          <h3 className="text-2xl font-bold text-slate-800">Graph Visualization</h3>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center space-x-2 glass-morphism p-1 rounded-xl">
+            <button
+              onClick={() => setViewMode('interactive')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center space-x-2 ${
+                viewMode === 'interactive'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Interactive</span>
+            </button>
+            <button
+              onClick={() => setViewMode('static')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center space-x-2 ${
+                viewMode === 'static'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Image className="w-4 h-4" />
+              <span>Static</span>
+            </button>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <GraphCard
-            title="Original Graph"
-            base64={result.original.visualization}
-            type="original"
-            gradient="from-blue-600 to-cyan-600"
-          />
-          <GraphCard
-            title="Optimized Graph"
-            base64={result.optimized.visualization}
-            type="optimized"
-            gradient="from-green-600 to-emerald-600"
-          />
-        </div>
+        {viewMode === 'interactive' ? (
+          <div className="grid md:grid-cols-2 gap-6">
+            <InteractiveGraph
+              edges={result.original.edges}
+              title="Original Graph"
+              isOptimized={false}
+            />
+            <InteractiveGraph
+              edges={result.optimized.edges}
+              title="Optimized Graph"
+              isOptimized={true}
+            />
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6">
+            <GraphCard
+              title="Original Graph"
+              base64={result.original.visualization}
+              type="original"
+              gradient="from-blue-600 to-cyan-600"
+            />
+            <GraphCard
+              title="Optimized Graph"
+              base64={result.optimized.visualization}
+              type="optimized"
+              gradient="from-green-600 to-emerald-600"
+            />
+          </div>
+        )}
       </motion.div>
 
       {/* Fullscreen Modal */}

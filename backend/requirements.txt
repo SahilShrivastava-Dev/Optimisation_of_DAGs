@@ -14,3 +14,10 @@ scipy==1.11.4
 # If installation fails, the app will use networkx spring_layout instead
 # pygraphviz==1.11
 
+# Optional: For AI-based image DAG extraction
+# Uncomment to enable image upload feature with automatic extraction
+# transformers==4.36.0
+# torch==2.1.2
+# pillow==10.2.0
+# openai==1.7.2  # Alternative: Use GPT-4 Vision API (best quality)
+

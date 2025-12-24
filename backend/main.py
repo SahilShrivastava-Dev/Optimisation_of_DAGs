@@ -8,6 +8,8 @@ import json
 import base64
 import io
 from datetime import datetime
+import tempfile
+import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -349,6 +351,76 @@ async def push_to_neo4j(request: Neo4jPushRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Neo4j error: {str(e)}")
+
+@app.post("/api/extract-from-image")
+async def extract_dag_from_image(
+    file: UploadFile = File(...),
+    method: str = "simple"  # "simple" (pattern matching) or "ai" (vision model)
+):
+    """Extract DAG structure from uploaded image"""
+    try:
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
+            content = await file.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+        
+        try:
+            if method == "ai":
+                # Use Vision-Language Model (requires setup)
+                try:
+                    from image_dag_extractor import ImageDAGExtractor
+                    
+                    # Try OpenAI first (if API key available)
+                    api_key = os.getenv("OPENAI_API_KEY")
+                    if api_key:
+                        extractor = ImageDAGExtractor(method="openai", api_key=api_key)
+                    else:
+                        # Fallback to Hugging Face (free but needs models)
+                        extractor = ImageDAGExtractor(method="huggingface")
+                    
+                    result = extractor.extract(tmp_path)
+                    is_valid, error = ImageDAGExtractor.validate_dag(result)
+                    
+                    if not is_valid:
+                        raise HTTPException(status_code=400, detail=f"Invalid graph extracted: {error}")
+                    
+                    # Convert to Edge format
+                    edges = [
+                        {"source": e["source"], "target": e["target"], "classes": []}
+                        for e in result["edges"]
+                    ]
+                    
+                    return {
+                        "success": True,
+                        "method": "ai_vision",
+                        "edges": edges,
+                        "nodes": result["nodes"],
+                        "message": f"Extracted {len(result['nodes'])} nodes and {len(edges)} edges using AI vision"
+                    }
+                    
+                except ImportError as e:
+                    return {
+                        "success": False,
+                        "error": "AI vision models not installed. Install with: pip install transformers torch pillow"
+                    }
+            
+            else:
+                # Simple method: Return instruction for user to manually input
+                return {
+                    "success": False,
+                    "method": "simple",
+                    "message": "Automatic extraction requires AI vision models. Please install: pip install transformers torch pillow openai",
+                    "instruction": "For now, please manually enter the nodes and edges from your image using the 'Paste' method."
+                }
+        
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image extraction error: {str(e)}")
 
 @app.get("/health")
 async def health_check():
