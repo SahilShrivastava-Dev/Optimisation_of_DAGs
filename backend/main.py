@@ -10,6 +10,10 @@ import io
 from datetime import datetime
 import tempfile
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
