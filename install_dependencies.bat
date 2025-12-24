@@ -12,7 +12,11 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-echo Backend dependencies installed successfully!
+echo.
+echo ✅ Backend dependencies installed successfully!
+echo.
+echo Note: If you see warnings about pygraphviz, that's OK!
+echo       The app will work fine without it (uses alternative layout)
 echo.
 
 echo [2/2] Installing Frontend Dependencies...

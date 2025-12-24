@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 import networkx as nx
+import numpy as np
 import json
 import base64
 import io
@@ -10,8 +11,14 @@ from datetime import datetime
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from networkx.drawing.nx_agraph import graphviz_layout
 import pandas as pd
+
+# Try to import graphviz_layout, fall back to spring_layout if not available
+try:
+    from networkx.drawing.nx_agraph import graphviz_layout
+    HAS_GRAPHVIZ = True
+except ImportError:
+    HAS_GRAPHVIZ = False
 from collections import defaultdict
 from neo4j import GraphDatabase
 
@@ -69,10 +76,14 @@ def create_visualization(optimizer: DAGOptimizer, optimized: bool = False) -> st
     
     G = optimizer.graph if optimized else optimizer.original_graph
     
-    try:
-        pos = graphviz_layout(G, prog='dot')
-    except:
-        pos = nx.spring_layout(G, seed=42)
+    # Use graphviz layout if available, otherwise use spring layout
+    if HAS_GRAPHVIZ:
+        try:
+            pos = graphviz_layout(G, prog='dot')
+        except:
+            pos = nx.spring_layout(G, seed=42, k=1/np.sqrt(len(G.nodes())))
+    else:
+        pos = nx.spring_layout(G, seed=42, k=1/np.sqrt(len(G.nodes())) if len(G.nodes()) > 0 else 1)
     
     # Color edges based on classes
     edge_colors = []

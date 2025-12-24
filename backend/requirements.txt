@@ -2,12 +2,15 @@ fastapi==0.109.0
 uvicorn[standard]==0.27.0
 pydantic==2.5.3
 networkx==3.2.1
+numpy==1.26.3
 matplotlib==3.8.2
 neo4j==5.16.0
 pandas==2.1.4
 openpyxl==3.1.2
 python-multipart==0.0.6
 scipy==1.11.4
-pydot==2.0.0
-pygraphviz==1.11
+
+# Optional: For better graph layouts (requires C++ compiler on Windows)
+# If installation fails, the app will use networkx spring_layout instead
+# pygraphviz==1.11
 

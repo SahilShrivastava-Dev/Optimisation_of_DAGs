@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileText, Sparkles, X } from 'lucide-react'
+import { Upload, FileText, Sparkles, X, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Edge } from '../types'
 import axios from 'axios'
@@ -18,6 +18,10 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
   const [textInput, setTextInput] = useState('')
   const [numNodes, setNumNodes] = useState(10)
   const [edgeProbability, setEdgeProbability] = useState(0.3)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(true)
+  const [graphStats, setGraphStats] = useState<{nodes: number, components: number} | null>(null)
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -88,9 +92,56 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
     }
   }
 
+  const generatePreview = async (edgeList: Edge[]) => {
+    if (edgeList.length === 0) return
+    
+    setLoadingPreview(true)
+    try {
+      // Validate and get graph stats
+      const validateResponse = await axios.post('/api/validate', {
+        edges: edgeList
+      })
+
+      if (validateResponse.data) {
+        setGraphStats({
+          nodes: validateResponse.data.num_nodes,
+          components: validateResponse.data.num_components
+        })
+      }
+
+      // Generate a simple preview visualization (without any optimization)
+      const vizResponse = await axios.post('/api/optimize', {
+        edges: edgeList,
+        transitive_reduction: false,
+        merge_nodes: false,
+        handle_cycles: 'remove'
+      })
+
+      if (vizResponse.data.success) {
+        setPreviewImage(vizResponse.data.original.visualization)
+      }
+    } catch (error) {
+      console.error('Preview generation failed:', error)
+      toast.error('Could not generate preview')
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  useEffect(() => {
+    if (edges.length > 0) {
+      generatePreview(edges)
+    } else {
+      setPreviewImage(null)
+      setGraphStats(null)
+    }
+  }, [edges])
+
   const clearEdges = () => {
     setEdges([])
     setTextInput('')
+    setPreviewImage(null)
+    setGraphStats(null)
     toast.success('Cleared all edges')
   }
 
@@ -245,28 +296,85 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
         )}
       </motion.div>
 
-      {/* Current Edges Summary */}
+      {/* Current Edges Summary with Preview */}
       {edges.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-morphism p-6 rounded-2xl flex items-center justify-between"
+          className="glass-morphism p-6 rounded-2xl space-y-4"
         >
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <FileText className="w-6 h-6 text-green-600" />
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-green-100 rounded-xl">
+                <FileText className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-800">Graph Loaded</p>
+                <p className="text-sm text-slate-500">
+                  {graphStats ? (
+                    <>{graphStats.nodes} nodes • {edges.length} edges • {graphStats.components} component{graphStats.components !== 1 ? 's' : ''}</>
+                  ) : (
+                    <>{edges.length} edges ready for optimization</>
+                  )}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-slate-800">Graph Loaded</p>
-              <p className="text-sm text-slate-500">{edges.length} edges ready for optimization</p>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                title={showPreview ? "Hide preview" : "Show preview"}
+              >
+                <Eye className={`w-5 h-5 ${showPreview ? 'text-blue-500' : 'text-slate-400'}`} />
+              </button>
+              <button
+                onClick={clearEdges}
+                className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                title="Clear graph"
+              >
+                <X className="w-5 h-5 text-red-500" />
+              </button>
             </div>
           </div>
-          <button
-            onClick={clearEdges}
-            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-red-500" />
-          </button>
+
+          {/* Graph Preview */}
+          {showPreview && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-700">Graph Preview</h3>
+                {loadingPreview && (
+                  <span className="text-xs text-slate-500 animate-pulse">Generating preview...</span>
+                )}
+              </div>
+              
+              {previewImage ? (
+                <div className="relative rounded-xl overflow-hidden bg-white border border-slate-200 shadow-inner">
+                  <img
+                    src={`data:image/png;base64,${previewImage}`}
+                    alt="Graph Preview"
+                    className="w-full h-auto max-h-96 object-contain"
+                  />
+                </div>
+              ) : loadingPreview ? (
+                <div className="flex items-center justify-center h-48 bg-slate-50 rounded-xl">
+                  <div className="text-center space-y-2">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-sm text-slate-500">Loading preview...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-48 bg-slate-50 rounded-xl">
+                  <p className="text-sm text-slate-400">Preview not available</p>
+                </div>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       )}
     </motion.section>
