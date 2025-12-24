@@ -375,8 +375,8 @@ async def extract_dag_from_image(
             tmp_path = tmp.name
         print(f"✅ Saved to: {tmp_path}")
         
-        # Try to use AI extraction
-        print("\n🤖 Starting AI extraction...")
+        # Try to use AI extraction with OpenRouter
+        print("\n🤖 Starting AI extraction with OpenRouter...")
         try:
             # Attempt to import the extractor
             try:
@@ -385,76 +385,57 @@ async def extract_dag_from_image(
                 print("✅ AI extractor loaded successfully")
             except ImportError as e:
                 print(f"❌ AI extractor not available: {e}")
-                # Module not found, return helpful message
                 response = {
                     "success": False,
                     "error": "setup_required",
-                    "message": "AI vision models not installed",
-                    "installation": {
-                        "option1": "pip install openai (for GPT-4 Vision - best quality)",
-                        "option2": "pip install transformers torch pillow (for free local models)",
-                        "tip": "After installation, restart the backend server"
+                    "message": "AI extractor module not found",
+                    "details": str(e)
+                }
+                print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                return response
+            
+            # Check for OpenRouter API key
+            api_key = os.getenv("OPENROUTER_API_KEY")
+            
+            if not api_key:
+                print("❌ No OpenRouter API key found")
+                response = {
+                    "success": False,
+                    "error": "api_key_required",
+                    "message": "OpenRouter API key required",
+                    "instructions": {
+                        "step1": "Get free API key from: https://openrouter.ai/keys",
+                        "step2": "Set environment variable: set OPENROUTER_API_KEY=your-key",
+                        "step3": "Restart backend server",
+                        "note": "Free tier includes google/gemini-2.0-flash-exp:free model!"
                     }
                 }
                 print(f"\n📤 Response: {json.dumps(response, indent=2)}")
                 return response
             
-            # Try OpenAI first (if API key available)
-            api_key = os.getenv("OPENAI_API_KEY")
+            # Get model name from env or use default
+            model = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
             
-            if api_key:
-                print("\n🔑 OpenAI API key found")
-                print("🚀 Using GPT-4 Vision for extraction...")
-                try:
-                    extractor = ImageDAGExtractor(method="openai", api_key=api_key)
-                    print("📸 Sending image to GPT-4 Vision API...")
-                    print("⏳ This may take 2-5 seconds...")
-                    result = extractor.extract(tmp_path)
-                    print(f"✅ GPT-4 Vision completed!")
-                    print(f"📊 Raw result: {json.dumps(result, indent=2)}")
-                except Exception as e:
-                    print(f"❌ OpenAI extraction failed: {e}")
-                    response = {
-                        "success": False,
-                        "error": "openai_failed",
-                        "message": f"OpenAI extraction failed: {str(e)}",
-                        "suggestion": "Check your API key or try local models: pip install transformers torch pillow"
-                    }
-                    print(f"\n📤 Response: {json.dumps(response, indent=2)}")
-                    return response
-            else:
-                print("\n🔓 No OpenAI API key found")
-                print("🆓 Using free local models (Hugging Face)...")
-                # Try Hugging Face models
-                try:
-                    print("📦 Loading local AI model...")
-                    extractor = ImageDAGExtractor(method="huggingface")
-                    print("📸 Processing image with local model...")
-                    print("⏳ This may take 5-10 seconds (first time: up to 2 minutes for model download)...")
-                    result = extractor.extract(tmp_path)
-                    print(f"✅ Local model completed!")
-                    print(f"📊 Raw result: {json.dumps(result, indent=2)}")
-                except ImportError as e:
-                    print(f"❌ Dependencies missing: {e}")
-                    response = {
-                        "success": False,
-                        "error": "dependencies_missing",
-                        "message": "AI model dependencies not installed",
-                        "missing": str(e),
-                        "install": "pip install transformers torch pillow"
-                    }
-                    print(f"\n📤 Response: {json.dumps(response, indent=2)}")
-                    return response
-                except Exception as e:
-                    print(f"❌ Extraction failed: {e}")
-                    response = {
-                        "success": False,
-                        "error": "extraction_failed",
-                        "message": f"Could not extract graph: {str(e)}",
-                        "suggestion": "Make sure the image has clear nodes and arrows"
-                    }
-                    print(f"\n📤 Response: {json.dumps(response, indent=2)}")
-                    return response
+            print(f"\n🔑 OpenRouter API key found")
+            print(f"🤖 Using model: {model}")
+            print("📸 Sending image to OpenRouter API...")
+            print("⏳ This may take 2-5 seconds...")
+            
+            try:
+                extractor = ImageDAGExtractor(api_key=api_key, model=model)
+                result = extractor.extract(tmp_path)
+                print(f"✅ Extraction completed!")
+                print(f"📊 Raw result: {json.dumps(result, indent=2)}")
+            except Exception as e:
+                print(f"❌ Extraction failed: {e}")
+                response = {
+                    "success": False,
+                    "error": "extraction_failed",
+                    "message": f"Could not extract graph: {str(e)}",
+                    "suggestion": "Check API key is valid or try a different model"
+                }
+                print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                return response
             
             # Validate extracted graph
             print("\n🔍 Validating extracted graph...")
@@ -490,15 +471,17 @@ async def extract_dag_from_image(
             
             response = {
                 "success": True,
-                "method": "openai" if api_key else "huggingface",
+                "method": "openrouter",
+                "model": model,
                 "edges": edges,
                 "nodes": result["nodes"],
-                "message": f"✅ Extracted {len(result['nodes'])} nodes and {len(edges)} edges"
+                "message": f"✅ Extracted {len(result['nodes'])} nodes and {len(edges)} edges using {model}"
             }
             
             print(f"\n📤 Sending response to frontend:")
             print(f"   Success: {response['success']}")
             print(f"   Method: {response['method']}")
+            print(f"   Model: {response['model']}")
             print(f"   Nodes: {len(response['nodes'])}")
             print(f"   Edges: {len(response['edges'])}")
             print("="*80 + "\n")
@@ -545,34 +528,18 @@ async def health_check():
 
 @app.get("/api/image-extraction/status")
 async def check_image_extraction_status():
-    """Check if image extraction dependencies are available"""
+    """Check if OpenRouter API is configured"""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    model = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
+    
     status = {
-        "image_extraction_available": False,
-        "openai_available": False,
-        "huggingface_available": False,
-        "methods": []
+        "image_extraction_available": bool(api_key),
+        "openrouter_configured": bool(api_key),
+        "model": model if api_key else None,
+        "method": "OpenRouter API" if api_key else None,
+        "setup_url": "https://openrouter.ai/keys" if not api_key else None,
+        "message": "Ready for image extraction" if api_key else "OpenRouter API key required"
     }
-    
-    # Check OpenAI
-    try:
-        import openai
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key:
-            status["openai_available"] = True
-            status["methods"].append("GPT-4 Vision (best quality)")
-    except ImportError:
-        pass
-    
-    # Check Hugging Face
-    try:
-        import transformers
-        import torch
-        status["huggingface_available"] = True
-        status["methods"].append("Florence-2/BLIP-2 (free, local)")
-    except ImportError:
-        pass
-    
-    status["image_extraction_available"] = status["openai_available"] or status["huggingface_available"]
     
     if not status["image_extraction_available"]:
         status["installation_instructions"] = {

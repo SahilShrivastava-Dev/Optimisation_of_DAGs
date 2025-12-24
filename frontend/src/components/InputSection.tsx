@@ -138,9 +138,9 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
         
         toast.success(data.message, { id: loadingToast })
         
-        // Show which method was used
-        const method = data.method === 'openai' ? 'GPT-4 Vision' : 'Local AI'
-        toast(`✨ Extracted using ${method}`, { icon: '🤖', duration: 3000 })
+        // Show which method/model was used
+        const modelName = data.model || 'OpenRouter API'
+        toast(`✨ Extracted using ${modelName}`, { icon: '🤖', duration: 3000 })
       } else {
         console.log('❌ Extraction failed')
         console.log('Error type:', data.error)
@@ -148,14 +148,27 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
         // Handle different error types
         const errorType = data.error || 'unknown'
         
-        if (errorType === 'setup_required' || errorType === 'dependencies_missing') {
-          toast.error('AI models not installed on backend', { id: loadingToast })
+        if (errorType === 'api_key_required') {
+          toast.error('OpenRouter API key required', { id: loadingToast })
           toast(
             <div className="space-y-2">
               <p className="font-semibold">To enable AI extraction:</p>
-              <p className="text-xs">Option 1: pip install openai</p>
-              <p className="text-xs">Option 2: pip install transformers torch pillow</p>
-              <p className="text-xs mt-2">Then restart the backend</p>
+              <p className="text-xs">1. Get free API key: openrouter.ai/keys</p>
+              <p className="text-xs">2. Set: OPENROUTER_API_KEY=your-key</p>
+              <p className="text-xs">3. Restart backend</p>
+              <p className="text-xs mt-2 text-green-400">✨ Free tier available!</p>
+            </div>,
+            {
+              duration: 10000,
+              icon: '🔑'
+            }
+          )
+        } else if (errorType === 'setup_required' || errorType === 'dependencies_missing') {
+          toast.error('Setup required', { id: loadingToast })
+          toast(
+            <div className="space-y-2">
+              <p className="font-semibold">Backend setup needed</p>
+              <p className="text-xs">{data.message}</p>
             </div>,
             {
               duration: 8000,

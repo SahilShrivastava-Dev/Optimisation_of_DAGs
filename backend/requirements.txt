@@ -9,15 +9,16 @@ pandas==2.1.4
 openpyxl==3.1.2
 python-multipart==0.0.6
 scipy==1.11.4
+requests==2.31.0
 
 # Optional: For better graph layouts (requires C++ compiler on Windows)
 # If installation fails, the app will use networkx spring_layout instead
 # pygraphviz==1.11
 
-# Optional: For AI-based image DAG extraction
-# Uncomment to enable image upload feature with automatic extraction
-# transformers==4.36.0
-# torch==2.1.2
-# pillow==10.2.0
-# openai==1.7.2  # Alternative: Use GPT-4 Vision API (best quality)
+# AI-based image DAG extraction uses OpenRouter API
+# No additional packages needed! Just set your API key:
+# 1. Get FREE key: https://openrouter.ai/keys
+# 2. Set: OPENROUTER_API_KEY=your-key
+# 3. Restart backend
+# See OPENROUTER_SETUP.md for details
 
