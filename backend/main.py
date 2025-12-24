@@ -359,21 +359,34 @@ async def extract_dag_from_image(
     """Extract DAG structure from uploaded image"""
     tmp_path = None
     
+    print("\n" + "="*80)
+    print("🖼️  IMAGE UPLOAD RECEIVED")
+    print("="*80)
+    print(f"📁 File: {file.filename}")
+    print(f"📏 Size: {file.size if hasattr(file, 'size') else 'unknown'} bytes")
+    print(f"🎨 Type: {file.content_type}")
+    
     try:
         # Save uploaded file temporarily
+        print("\n💾 Saving image temporarily...")
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = tmp.name
+        print(f"✅ Saved to: {tmp_path}")
         
         # Try to use AI extraction
+        print("\n🤖 Starting AI extraction...")
         try:
             # Attempt to import the extractor
             try:
+                print("📦 Loading AI extractor module...")
                 from image_dag_extractor import ImageDAGExtractor
-            except ImportError:
+                print("✅ AI extractor loaded successfully")
+            except ImportError as e:
+                print(f"❌ AI extractor not available: {e}")
                 # Module not found, return helpful message
-                return {
+                response = {
                     "success": False,
                     "error": "setup_required",
                     "message": "AI vision models not installed",
@@ -383,89 +396,148 @@ async def extract_dag_from_image(
                         "tip": "After installation, restart the backend server"
                     }
                 }
+                print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                return response
             
             # Try OpenAI first (if API key available)
             api_key = os.getenv("OPENAI_API_KEY")
             
             if api_key:
+                print("\n🔑 OpenAI API key found")
+                print("🚀 Using GPT-4 Vision for extraction...")
                 try:
                     extractor = ImageDAGExtractor(method="openai", api_key=api_key)
+                    print("📸 Sending image to GPT-4 Vision API...")
+                    print("⏳ This may take 2-5 seconds...")
                     result = extractor.extract(tmp_path)
+                    print(f"✅ GPT-4 Vision completed!")
+                    print(f"📊 Raw result: {json.dumps(result, indent=2)}")
                 except Exception as e:
-                    return {
+                    print(f"❌ OpenAI extraction failed: {e}")
+                    response = {
                         "success": False,
                         "error": "openai_failed",
                         "message": f"OpenAI extraction failed: {str(e)}",
                         "suggestion": "Check your API key or try local models: pip install transformers torch pillow"
                     }
+                    print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                    return response
             else:
+                print("\n🔓 No OpenAI API key found")
+                print("🆓 Using free local models (Hugging Face)...")
                 # Try Hugging Face models
                 try:
+                    print("📦 Loading local AI model...")
                     extractor = ImageDAGExtractor(method="huggingface")
+                    print("📸 Processing image with local model...")
+                    print("⏳ This may take 5-10 seconds (first time: up to 2 minutes for model download)...")
                     result = extractor.extract(tmp_path)
+                    print(f"✅ Local model completed!")
+                    print(f"📊 Raw result: {json.dumps(result, indent=2)}")
                 except ImportError as e:
-                    return {
+                    print(f"❌ Dependencies missing: {e}")
+                    response = {
                         "success": False,
                         "error": "dependencies_missing",
                         "message": "AI model dependencies not installed",
                         "missing": str(e),
                         "install": "pip install transformers torch pillow"
                     }
+                    print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                    return response
                 except Exception as e:
-                    return {
+                    print(f"❌ Extraction failed: {e}")
+                    response = {
                         "success": False,
                         "error": "extraction_failed",
                         "message": f"Could not extract graph: {str(e)}",
                         "suggestion": "Make sure the image has clear nodes and arrows"
                     }
+                    print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                    return response
             
             # Validate extracted graph
+            print("\n🔍 Validating extracted graph...")
             is_valid, error = ImageDAGExtractor.validate_dag(result)
             
             if not is_valid:
-                return {
+                print(f"❌ Validation failed: {error}")
+                response = {
                     "success": False,
                     "error": "invalid_graph",
                     "message": f"Extracted graph is invalid: {error}",
                     "suggestion": "Try a clearer image or use manual input"
                 }
+                print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+                return response
+            
+            print("✅ Graph is valid!")
             
             # Convert to Edge format
+            print("\n🔄 Converting to application format...")
             edges = [
                 {"source": e["source"], "target": e["target"], "classes": []}
                 for e in result["edges"]
             ]
             
-            return {
+            print(f"📊 Extracted:")
+            print(f"   - Nodes: {result['nodes']}")
+            print(f"   - Edges: {len(edges)}")
+            for i, edge in enumerate(edges[:10], 1):  # Show first 10 edges
+                print(f"     {i}. {edge['source']} → {edge['target']}")
+            if len(edges) > 10:
+                print(f"     ... and {len(edges) - 10} more")
+            
+            response = {
                 "success": True,
                 "method": "openai" if api_key else "huggingface",
                 "edges": edges,
                 "nodes": result["nodes"],
                 "message": f"✅ Extracted {len(result['nodes'])} nodes and {len(edges)} edges"
             }
+            
+            print(f"\n📤 Sending response to frontend:")
+            print(f"   Success: {response['success']}")
+            print(f"   Method: {response['method']}")
+            print(f"   Nodes: {len(response['nodes'])}")
+            print(f"   Edges: {len(response['edges'])}")
+            print("="*80 + "\n")
+            
+            return response
         
         except Exception as e:
-            return {
+            print(f"\n❌ Unexpected error: {e}")
+            print(f"   Type: {type(e).__name__}")
+            import traceback
+            print(f"   Traceback:\n{traceback.format_exc()}")
+            response = {
                 "success": False,
                 "error": "unexpected_error",
                 "message": f"Unexpected error: {str(e)}",
                 "trace": str(type(e).__name__)
             }
+            print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+            return response
     
     except Exception as e:
-        return {
+        print(f"\n❌ File processing error: {e}")
+        response = {
             "success": False,
             "error": "file_error",
             "message": f"Could not process uploaded file: {str(e)}"
         }
+        print(f"\n📤 Response: {json.dumps(response, indent=2)}")
+        return response
     
     finally:
         # Clean up temp file
         if tmp_path and os.path.exists(tmp_path):
             try:
+                print(f"\n🧹 Cleaning up temporary file: {tmp_path}")
                 os.unlink(tmp_path)
-            except:
-                pass  # Ignore cleanup errors
+                print("✅ Cleanup complete")
+            except Exception as e:
+                print(f"⚠️  Cleanup warning: {e}")
 
 @app.get("/health")
 async def health_check():

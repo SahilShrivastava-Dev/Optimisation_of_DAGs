@@ -108,25 +108,43 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
     const loadingToast = toast.loading('🤖 AI is analyzing your image...')
 
     try {
+      console.log('🖼️ IMAGE UPLOAD STARTED')
+      console.log('📁 File:', file.name, file.type, file.size, 'bytes')
+      
       const formData = new FormData()
       formData.append('file', file)
 
+      console.log('📤 Sending to backend...')
       const response = await axios.post('/api/extract-from-image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 60000  // 60 second timeout for AI processing
       })
 
+      console.log('📥 Response received:', response.status)
+      console.log('📊 Response data:', response.data)
+
       const data = response.data
 
       if (data.success) {
+        console.log('✅ Extraction successful!')
+        console.log('📊 Extracted edges:', data.edges)
+        console.log('📊 Extracted nodes:', data.nodes)
+        console.log('🔧 Method used:', data.method)
+        
         const extractedEdges = data.edges
+        console.log('🔄 Setting edges in state...')
         setEdges(extractedEdges)
+        console.log('✅ Edges set! Length:', extractedEdges.length)
+        
         toast.success(data.message, { id: loadingToast })
         
         // Show which method was used
         const method = data.method === 'openai' ? 'GPT-4 Vision' : 'Local AI'
         toast(`✨ Extracted using ${method}`, { icon: '🤖', duration: 3000 })
       } else {
+        console.log('❌ Extraction failed')
+        console.log('Error type:', data.error)
+        console.log('Error message:', data.message)
         // Handle different error types
         const errorType = data.error || 'unknown'
         
@@ -161,7 +179,11 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
         }
       }
     } catch (error: any) {
-      console.error('Image extraction error:', error)
+      console.error('❌ IMAGE EXTRACTION ERROR')
+      console.error('Error object:', error)
+      console.error('Error code:', error.code)
+      console.error('Error message:', error.message)
+      console.error('Error response:', error.response)
       
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         toast.error('Request timed out - image processing took too long', { id: loadingToast })
@@ -210,9 +232,12 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
   }
 
   useEffect(() => {
+    console.log('🔄 Edges state changed! Length:', edges.length)
     if (edges.length > 0) {
+      console.log('📊 Fetching graph stats for', edges.length, 'edges')
       fetchGraphStats(edges)
     } else {
+      console.log('🗑️ No edges, clearing stats')
       setGraphStats(null)
     }
   }, [edges])
