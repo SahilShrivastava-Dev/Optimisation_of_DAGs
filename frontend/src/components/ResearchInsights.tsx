@@ -528,11 +528,189 @@ export default function ResearchInsights({ originalMetrics, optimizedMetrics }: 
         </div>
       </motion.div>
 
+      {/* PERT/CPM Critical Path Analysis */}
+      {originalMetrics.critical_path_analysis && optimizedMetrics.critical_path_analysis && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="research-card bg-gradient-to-br from-cyan-900/20 to-blue-900/20 border border-cyan-700/30"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-cyan-500/10">
+              <Target className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">⚡ PERT/CPM Analysis</h3>
+              <p className="text-xs text-slate-400">Critical Path Method & Slack Computation</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Makespan (Parallel Time)</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-cyan-400">{originalMetrics.makespan}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{optimizedMetrics.makespan}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Steps (if parallelized)</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Time Saved by Parallelism</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-purple-400">{originalMetrics.parallel_time_saved}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{optimizedMetrics.parallel_time_saved}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">vs sequential execution</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Critical Nodes (Zero Slack)</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-red-400">{originalMetrics.critical_nodes_count}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-yellow-400">{optimizedMetrics.critical_nodes_count}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Bottleneck nodes</div>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-400 bg-slate-800/30 rounded p-3">
+            <strong className="text-cyan-400">Research Paper:</strong> "Topological Sorts on DAGs" - PERT/CPM algorithm identifies nodes with zero slack (critical path) that cannot be delayed without affecting total execution time.
+          </div>
+        </motion.div>
+      )}
+
+      {/* Layer-based Parallelism Analysis */}
+      {originalMetrics.layer_analysis && optimizedMetrics.layer_analysis && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="research-card bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-700/30"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-purple-500/10">
+              <Activity className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">🎯 Width & Parallelism Optimization</h3>
+              <p className="text-xs text-slate-400">Layer-based Structure Analysis</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">DAG Width (Max Layer)</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-purple-400">{originalMetrics.dag_width}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{optimizedMetrics.dag_width}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Max parallel nodes</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">DAG Depth (Layers)</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-blue-400">{originalMetrics.dag_depth}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-cyan-400">{optimizedMetrics.dag_depth}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Sequential stages</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Width Efficiency</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-yellow-400">{(originalMetrics.width_efficiency! * 100).toFixed(1)}%</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{(optimizedMetrics.width_efficiency! * 100).toFixed(1)}%</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Layer balance</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Avg Layer Size</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-pink-400">{originalMetrics.parallelism_potential?.toFixed(1)}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{optimizedMetrics.parallelism_potential?.toFixed(1)}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Nodes per layer</div>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-400 bg-slate-800/30 rounded p-3">
+            <strong className="text-purple-400">Research Paper:</strong> "Simpler Optimal Sorting from a Directed Acyclic Graph" - Minimizing width W while preserving dependencies maximizes parallel execution potential. Optimal parallelization theorem: W* ≤ ⌈|V|/depth⌉
+          </div>
+        </motion.div>
+      )}
+
+      {/* Edge Criticality Analysis */}
+      {originalMetrics.edge_criticality && optimizedMetrics.edge_criticality && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="research-card bg-gradient-to-br from-orange-900/20 to-red-900/20 border border-orange-700/30"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-orange-500/10">
+              <Zap className="w-6 h-6 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">🔥 Edge Criticality Analysis</h3>
+              <p className="text-xs text-slate-400">Which edges are absolutely necessary?</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Critical Edges</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-red-400">{originalMetrics.critical_edges_count}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{optimizedMetrics.critical_edges_count}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Cannot be removed</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Redundant Edges</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-orange-400">{originalMetrics.redundant_edges_count}</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{optimizedMetrics.redundant_edges_count}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Can be removed safely</div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">Criticality Ratio</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-yellow-400">{(originalMetrics.edge_criticality_ratio! * 100).toFixed(1)}%</span>
+                <span className="text-lg text-slate-500">→</span>
+                <span className="text-2xl font-bold text-green-400">{(optimizedMetrics.edge_criticality_ratio! * 100).toFixed(1)}%</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">% critical edges</div>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-400 bg-slate-800/30 rounded p-3">
+            <strong className="text-orange-400">Research Paper:</strong> "Graph Sparsification with Guarantees" - An edge (u,v) is critical if removing it breaks reachability. Identifies transitive (redundant) edges that can be safely removed while preserving graph structure.
+          </div>
+        </motion.div>
+      )}
+
       {/* Mathematical Formulas */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.8 }}
         className="research-card bg-slate-900/50"
       >
         <h3 className="text-lg font-semibold text-white mb-4">📐 Mathematical Definitions</h3>

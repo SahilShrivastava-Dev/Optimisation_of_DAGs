@@ -4,6 +4,31 @@ export interface Edge {
   classes?: string[]
 }
 
+export interface CriticalPathAnalysis {
+  critical_path: string[]
+  slack: Record<string, number>
+  EST: Record<string, number>
+  LST: Record<string, number>
+  makespan: number
+  parallel_time_saved: number
+}
+
+export interface LayerAnalysis {
+  layers: Record<string, string[]>  // String keys for JSON serialization
+  width: number
+  depth: number
+  width_efficiency: number
+  avg_layer_size: number
+  node_to_layer: Record<string, number>
+}
+
+export interface EdgeCriticality {
+  critical_edges: string[][]  // Array of [source, target] pairs
+  redundant_edges: string[][]  // Array of [source, target] pairs
+  edge_criticality_scores: Record<string, number>  // "source->target": score
+  avg_criticality: number
+}
+
 export interface GraphMetrics {
   num_nodes: number
   num_edges: number
@@ -30,6 +55,22 @@ export interface GraphMetrics {
   critical_path: string[]
   strongly_connected_components: number
   topological_complexity: number
+  num_edges_in_transitive_closure: number
+  num_edges_in_transitive_reduction: number
+  // Research Paper-Based Advanced Features
+  critical_path_analysis?: CriticalPathAnalysis
+  makespan?: number
+  parallel_time_saved?: number
+  critical_nodes_count?: number
+  layer_analysis?: LayerAnalysis
+  dag_width?: number
+  dag_depth?: number
+  width_efficiency?: number
+  parallelism_potential?: number
+  edge_criticality?: EdgeCriticality
+  critical_edges_count?: number
+  redundant_edges_count?: number
+  edge_criticality_ratio?: number
 }
 
 export interface GraphData {
