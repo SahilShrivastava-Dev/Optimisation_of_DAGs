@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 import networkx as nx
@@ -552,6 +553,97 @@ async def check_image_extraction_status():
         }
     
     return status
+
+@app.post("/api/export-research-report")
+async def export_research_report(options: OptimizationOptions):
+    """Generate and download a research paper-style DOCX report"""
+    try:
+        # Perform optimization
+        edge_list, edge_attrs = edges_to_optimizer(options.edges)
+        G = nx.DiGraph(edge_list)
+        
+        # Handle cycles if present
+        if not nx.is_directed_acyclic_graph(G):
+            if options.handle_cycles == "error":
+                cycles = [list(cycle) for cycle in nx.simple_cycles(G)]
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Graph contains cycles. Remove cycles before generating report."
+                )
+            else:
+                # Remove cycles
+                try:
+                    from networkx.algorithms.approximation import minimum_feedback_arc_set
+                    fas = minimum_feedback_arc_set(G)
+                    G.remove_edges_from(fas)
+                except:
+                    for cycle in nx.simple_cycles(G):
+                        cycle_edges = list(zip(cycle, cycle[1:] + [cycle[0]]))
+                        for u, v in cycle_edges:
+                            if G.has_edge(u, v):
+                                G.remove_edge(u, v)
+                                break
+                edge_list = list(G.edges())
+        
+        # Create optimizer and apply optimizations
+        optimizer = DAGOptimizer(edge_list, edge_attrs)
+        
+        if options.transitive_reduction:
+            optimizer.transitive_reduction()
+        if options.merge_nodes:
+            optimizer.merge_equivalent_nodes()
+        
+        # Get metrics
+        original_metrics = optimizer.evaluate_graph_metrics(optimizer.original_graph)
+        optimized_metrics = optimizer.evaluate_graph_metrics(optimizer.graph)
+        
+        # Prepare edge data
+        original_edges = [
+            {"source": u, "target": v, "classes": edge_attrs.get((u, v), [])}
+            for u, v in optimizer.original_graph.edges()
+        ]
+        optimized_edges = [
+            {"source": u, "target": v, "classes": optimizer.edge_attrs.get((u, v), [])}
+            for u, v in optimizer.graph.edges()
+        ]
+        
+        # Prepare optimization data
+        optimization_data = {
+            "original": {
+                "edges": original_edges,
+                "metrics": original_metrics
+            },
+            "optimized": {
+                "edges": optimized_edges,
+                "metrics": optimized_metrics
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Generate report
+        from research_report_generator import ResearchReportGenerator
+        
+        generator = ResearchReportGenerator()
+        report_buffer = generator.generate_report(optimization_data)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"DAG_Optimization_Research_Report_{timestamp}.docx"
+        
+        # Return as downloadable file
+        return StreamingResponse(
+            report_buffer,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    
+    except Exception as e:
+        import traceback
+        print(f"Error generating research report: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

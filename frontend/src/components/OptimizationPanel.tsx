@@ -58,10 +58,10 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
       className="glass-morphism p-8 rounded-2xl"
     >
       <div className="flex items-center space-x-3 mb-6">
-        <div className="p-2 bg-purple-100 rounded-lg">
-          <Settings className="w-6 h-6 text-purple-600" />
+        <div className="p-2 bg-purple-500/20 rounded-lg">
+          <Settings className="w-6 h-6 text-purple-400" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-800">Optimization Settings</h2>
+        <h2 className="text-2xl font-bold text-white">Optimization Settings</h2>
       </div>
 
       <div className="space-y-6">
@@ -73,8 +73,8 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
             className={`
               p-6 rounded-xl border-2 transition-all cursor-pointer
               ${transitiveReduction 
-                ? 'border-blue-500 bg-blue-50/50' 
-                : 'border-slate-200 bg-white/50 hover:border-slate-300'
+                ? 'border-blue-500 bg-blue-900/30' 
+                : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
               }
               ${loading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
@@ -88,8 +88,8 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
                 className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
               />
               <div className="flex-1">
-                <h3 className="font-semibold text-slate-800 mb-1">Transitive Reduction</h3>
-                <p className="text-sm text-slate-600">
+                <h3 className="font-semibold text-white mb-1">Transitive Reduction</h3>
+                <p className="text-sm text-slate-300">
                   Remove redundant edges while preserving reachability
                 </p>
               </div>
@@ -102,8 +102,8 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
             className={`
               p-6 rounded-xl border-2 transition-all cursor-pointer
               ${mergeNodes 
-                ? 'border-blue-500 bg-blue-50/50' 
-                : 'border-slate-200 bg-white/50 hover:border-slate-300'
+                ? 'border-blue-500 bg-blue-900/30' 
+                : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
               }
               ${loading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
@@ -117,8 +117,8 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
                 className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
               />
               <div className="flex-1">
-                <h3 className="font-semibold text-slate-800 mb-1">Merge Equivalent Nodes</h3>
-                <p className="text-sm text-slate-600">
+                <h3 className="font-semibold text-white mb-1">Merge Equivalent Nodes</h3>
+                <p className="text-sm text-slate-300">
                   Combine nodes with identical parents and children
                 </p>
               </div>
@@ -128,7 +128,7 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
 
         {/* Cycle Handling */}
         <div className="space-y-3">
-          <label className="block text-sm font-semibold text-slate-700">
+          <label className="block text-sm font-semibold text-white">
             If cycles are detected:
           </label>
           <div className="grid grid-cols-2 gap-4">
@@ -138,14 +138,14 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
               className={`
                 p-4 rounded-xl border-2 transition-all
                 ${handleCycles === 'error' 
-                  ? 'border-red-500 bg-red-50/50' 
-                  : 'border-slate-200 bg-white/50 hover:border-slate-300'
+                  ? 'border-red-500 bg-red-900/30' 
+                  : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                 }
                 ${loading ? 'opacity-50 cursor-not-allowed' : ''}
               `}
             >
-              <p className="font-semibold text-slate-800">Show Error</p>
-              <p className="text-xs text-slate-600 mt-1">Stop optimization</p>
+              <p className="font-semibold text-white">Show Error</p>
+              <p className="text-xs text-slate-300 mt-1">Stop optimization</p>
             </button>
             <button
               onClick={() => setHandleCycles('remove')}
@@ -153,14 +153,14 @@ const OptimizationPanel = ({ edges, setResult, loading, setLoading }: Optimizati
               className={`
                 p-4 rounded-xl border-2 transition-all
                 ${handleCycles === 'remove' 
-                  ? 'border-amber-500 bg-amber-50/50' 
-                  : 'border-slate-200 bg-white/50 hover:border-slate-300'
+                  ? 'border-amber-500 bg-amber-900/30' 
+                  : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                 }
                 ${loading ? 'opacity-50 cursor-not-allowed' : ''}
               `}
             >
-              <p className="font-semibold text-slate-800">Auto Remove</p>
-              <p className="text-xs text-slate-600 mt-1">Break cycles automatically</p>
+              <p className="font-semibold text-white">Auto Remove</p>
+              <p className="text-xs text-slate-300 mt-1">Break cycles automatically</p>
             </button>
           </div>
         </div>

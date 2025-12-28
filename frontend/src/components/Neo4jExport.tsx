@@ -76,7 +76,7 @@ const Neo4jExport = ({ result, onClose }: Neo4jExportProps) => {
             <div className="p-2 bg-blue-100 rounded-lg">
               <Database className="w-6 h-6 text-blue-600" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800">Push to Neo4j</h3>
+            <h3 className="text-2xl font-bold text-white">Push to Neo4j</h3>
           </div>
           <button
             onClick={onClose}
@@ -93,14 +93,14 @@ const Neo4jExport = ({ result, onClose }: Neo4jExportProps) => {
             className="text-center py-8"
           >
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <p className="text-lg font-semibold text-slate-800">Successfully Pushed!</p>
-            <p className="text-sm text-slate-600 mt-2">Your graph is now in Neo4j</p>
+            <p className="text-lg font-semibold text-white">Successfully Pushed!</p>
+            <p className="text-sm text-slate-300 mt-2">Your graph is now in Neo4j</p>
           </motion.div>
         ) : (
           <div className="space-y-6">
             {/* Graph Type Selection */}
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-white">
                 Which graph to push?
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -134,7 +134,7 @@ const Neo4jExport = ({ result, onClose }: Neo4jExportProps) => {
             {/* Connection Details */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Bolt URI
                 </label>
                 <input
@@ -147,7 +147,7 @@ const Neo4jExport = ({ result, onClose }: Neo4jExportProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Username
                 </label>
                 <input
@@ -160,7 +160,7 @@ const Neo4jExport = ({ result, onClose }: Neo4jExportProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Password
                 </label>
                 <input

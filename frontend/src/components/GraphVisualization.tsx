@@ -85,7 +85,7 @@ const GraphVisualization = ({ result }: GraphVisualizationProps) => {
             <div className="p-2 bg-pink-100 rounded-lg">
               <Image className="w-6 h-6 text-pink-600" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800">Graph Visualization</h3>
+            <h3 className="text-2xl font-bold text-white">Graph Visualization</h3>
           </div>
 
           {/* View Mode Toggle */}

@@ -47,17 +47,17 @@ const MetricsComparison = ({ result }: MetricsComparisonProps) => {
         <div className="p-2 bg-indigo-100 rounded-lg">
           <BarChart className="w-6 h-6 text-indigo-600" />
         </div>
-        <h3 className="text-2xl font-bold text-slate-800">Metrics Comparison</h3>
+        <h3 className="text-2xl font-bold text-white">Metrics Comparison</h3>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b-2 border-slate-200">
-              <th className="text-left py-4 px-4 font-semibold text-slate-700">Metric</th>
-              <th className="text-center py-4 px-4 font-semibold text-slate-700">Original</th>
-              <th className="text-center py-4 px-4 font-semibold text-slate-700">Optimized</th>
-              <th className="text-center py-4 px-4 font-semibold text-slate-700">Change</th>
+            <tr className="border-b-2 border-slate-600">
+              <th className="text-left py-4 px-4 font-semibold text-white">Metric</th>
+              <th className="text-center py-4 px-4 font-semibold text-white">Original</th>
+              <th className="text-center py-4 px-4 font-semibold text-white">Optimized</th>
+              <th className="text-center py-4 px-4 font-semibold text-white">Change</th>
             </tr>
           </thead>
           <tbody>
@@ -71,11 +71,11 @@ const MetricsComparison = ({ result }: MetricsComparisonProps) => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+                  className="border-b border-slate-700 hover:bg-slate-800/50 transition-colors"
                 >
-                  <td className="py-4 px-4 font-medium text-slate-700">{metric.label}</td>
+                  <td className="py-4 px-4 font-medium text-white">{metric.label}</td>
                   <td className="py-4 px-4 text-center">
-                    <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-semibold">
+                    <span className="inline-block px-3 py-1 bg-blue-900/40 text-blue-300 rounded-lg font-semibold">
                       {formatValue(original, metric.format)}
                     </span>
                   </td>

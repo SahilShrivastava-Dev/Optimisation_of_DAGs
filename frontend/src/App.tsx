@@ -12,7 +12,7 @@ function App() {
   const [loading, setLoading] = useState(false)
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 bg-[#1a1d29]">
       <Toaster 
         position="top-right"
         toastOptions={{

@@ -11,6 +11,7 @@ python-multipart==0.0.6
 scipy==1.11.4
 requests==2.31.0
 python-dotenv==1.0.0
+python-docx==1.1.0
 
 # Optional: For better graph layouts (requires C++ compiler on Windows)
 # If installation fails, the app will use networkx spring_layout instead

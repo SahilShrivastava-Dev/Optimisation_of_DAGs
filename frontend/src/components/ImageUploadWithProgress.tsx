@@ -11,7 +11,7 @@ interface ImageUploadWithProgressProps {
 
 type ProgressStage = 'idle' | 'uploading' | 'analyzing' | 'extracting' | 'validating' | 'complete'
 
-export function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: ImageUploadWithProgressProps) {
+export default function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: ImageUploadWithProgressProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -218,12 +218,12 @@ export function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: Im
             />
             
             <div className="flex flex-col items-center justify-center space-y-3">
-              <Upload className={`w-12 h-12 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+              <Upload className={`w-12 h-12 ${isDragging ? 'text-blue-500' : 'text-slate-300'}`} />
               <div className="text-center">
-                <p className="text-lg font-medium text-gray-200">
+                <p className="text-lg font-medium text-white">
                   {isDragging ? 'Drop image here' : 'Upload DAG Image'}
                 </p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-slate-300 mt-1">
                   PNG, JPG, or WEBP • Max 10MB
                 </p>
               </div>
@@ -267,7 +267,7 @@ export function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: Im
                       <p className="text-lg font-medium text-white">
                         {stageMessages[stage]}
                       </p>
-                      <p className="text-sm text-gray-300 mt-1">
+                      <p className="text-sm text-white mt-1">
                         {progress}% complete
                       </p>
                     </div>
@@ -305,7 +305,7 @@ export function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: Im
                   />
                 </div>
                 
-                <div className="flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center justify-between text-xs text-slate-300">
                   <span>{stageMessages[stage]}</span>
                   <span>{progress}%</span>
                 </div>
@@ -332,7 +332,7 @@ export function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: Im
       </AnimatePresence>
 
       {/* Info */}
-      <div className="text-xs text-gray-400 space-y-1">
+      <div className="text-xs text-slate-300 space-y-1">
         <p>💡 Upload a clear image of your DAG diagram</p>
         <p>🤖 AI will automatically detect nodes and edges</p>
         <p>⚡ Powered by OpenRouter's free vision models</p>

@@ -62,9 +62,13 @@ class DAGOptimizer:
 
     def evaluate_graph_metrics(self, G):
         metrics = {}
+        
+        # Basic Metrics
         metrics["num_nodes"] = G.number_of_nodes()
         metrics["num_edges"] = G.number_of_edges()
         metrics["num_leaf_nodes"] = sum(1 for n in G if G.out_degree(n)==0)
+        
+        # Path Metrics
         try:
             metrics["longest_path_length"] = nx.dag_longest_path_length(G)
         except:
@@ -75,17 +79,119 @@ class DAGOptimizer:
             metrics["shortest_path_length"] = shortest
         except:
             metrics["shortest_path_length"] = "N/A"
+        
         metrics["depth"] = metrics["longest_path_length"] if isinstance(metrics["longest_path_length"],int) else "N/A"
         levels = Counter(len(nx.ancestors(G,n)) for n in G.nodes())
         metrics["width"] = max(levels.values()) if levels else 0
+        
+        # Complexity Metrics
         comps = nx.number_weakly_connected_components(G)
         metrics["cyclomatic_complexity"] = G.number_of_edges() - G.number_of_nodes() + 2*comps
+        
+        # Degree Metrics
         degs = [d for _,d in G.degree()]
         freq = Counter(degs)
         metrics["degree_distribution"] = dict(freq)
         total = sum(freq.values())
         metrics["degree_entropy"] = -sum((f/total)*math.log2(f/total) for f in freq.values()) if total>0 else 0
         metrics["density"] = nx.density(G)
+        
+        # ========== ADVANCED RESEARCH METRICS ==========
+        
+        # Average Degree
+        metrics["avg_degree"] = sum(degs) / len(degs) if degs else 0
+        
+        # Max In/Out Degrees (Bottleneck Detection)
+        in_degrees = [d for _, d in G.in_degree()]
+        out_degrees = [d for _, d in G.out_degree()]
+        metrics["max_in_degree"] = max(in_degrees) if in_degrees else 0
+        metrics["max_out_degree"] = max(out_degrees) if out_degrees else 0
+        
+        # Average Path Length (Graph Efficiency)
+        try:
+            all_paths = dict(nx.all_pairs_shortest_path_length(G))
+            path_lengths = [length for source in all_paths.values() 
+                          for length in source.values() if length > 0]
+            metrics["avg_path_length"] = sum(path_lengths) / len(path_lengths) if path_lengths else 0
+        except:
+            metrics["avg_path_length"] = 0
+        
+        # Diameter (Maximum Eccentricity)
+        try:
+            # For DAGs, we use the longest path length as diameter
+            metrics["diameter"] = metrics["longest_path_length"] if isinstance(metrics["longest_path_length"], int) else 0
+        except:
+            metrics["diameter"] = 0
+        
+        # Transitivity (Clustering Coefficient for Directed Graphs)
+        try:
+            metrics["transitivity"] = nx.transitivity(G)
+        except:
+            metrics["transitivity"] = 0
+        
+        # Redundancy Ratio (Transitive Edges / Total Edges)
+        try:
+            transitive_closure = nx.transitive_closure_dag(G)
+            transitive_reduction = nx.transitive_reduction(G)
+            redundant_edges = transitive_closure.number_of_edges() - transitive_reduction.number_of_edges()
+            metrics["redundancy_ratio"] = redundant_edges / G.number_of_edges() if G.number_of_edges() > 0 else 0
+        except:
+            metrics["redundancy_ratio"] = 0
+        
+        # Compactness Score (1 - normalized edge count)
+        # Lower is better: measures how compact the DAG is
+        n = G.number_of_nodes()
+        max_possible_edges = n * (n - 1) / 2 if n > 1 else 1
+        metrics["compactness_score"] = 1 - (G.number_of_edges() / max_possible_edges) if max_possible_edges > 0 else 1
+        
+        # Efficiency Score (composite metric)
+        # Higher is better: combines low redundancy, low density, high compactness
+        efficiency_components = []
+        if metrics["redundancy_ratio"] >= 0:
+            efficiency_components.append(1 - metrics["redundancy_ratio"])
+        if metrics["density"] >= 0:
+            efficiency_components.append(1 - metrics["density"])
+        if metrics["compactness_score"] >= 0:
+            efficiency_components.append(metrics["compactness_score"])
+        metrics["efficiency_score"] = sum(efficiency_components) / len(efficiency_components) if efficiency_components else 0
+        
+        # Bottleneck Nodes (nodes with highest betweenness centrality)
+        try:
+            betweenness = nx.betweenness_centrality(G)
+            sorted_nodes = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)
+            metrics["bottleneck_nodes"] = [str(node) for node, _ in sorted_nodes[:5]]
+        except:
+            metrics["bottleneck_nodes"] = []
+        
+        # Critical Path (longest path in the DAG)
+        try:
+            critical_path = nx.dag_longest_path(G)
+            metrics["critical_path"] = [str(node) for node in critical_path]
+        except:
+            metrics["critical_path"] = []
+        
+        # Strongly Connected Components (should be 1 for each node in a DAG)
+        try:
+            # For DAGs, we count weakly connected components instead
+            metrics["strongly_connected_components"] = nx.number_weakly_connected_components(G)
+        except:
+            metrics["strongly_connected_components"] = 1
+        
+        # Topological Complexity (normalized sum of topological levels)
+        try:
+            topo_levels = {}
+            for node in nx.topological_sort(G):
+                predecessors = list(G.predecessors(node))
+                if not predecessors:
+                    topo_levels[node] = 0
+                else:
+                    topo_levels[node] = max(topo_levels[p] for p in predecessors) + 1
+            
+            max_level = max(topo_levels.values()) if topo_levels else 0
+            metrics["topological_complexity"] = max_level
+        except:
+            metrics["topological_complexity"] = 0
+        
         return metrics
 
     def metadata(self):

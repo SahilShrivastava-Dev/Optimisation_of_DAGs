@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { Edge } from '../types'
 import axios from 'axios'
 import InteractiveGraph from './InteractiveGraph'
-import { ImageUploadWithProgress } from './ImageUploadWithProgress'
+import ImageUploadWithProgress from './ImageUploadWithProgress'
 
 interface InputSectionProps {
   edges: Edge[]
@@ -277,8 +277,8 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
       className="space-y-6"
     >
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-slate-800">Input Your Graph</h2>
-        <p className="text-slate-500">Choose how you'd like to provide your DAG</p>
+        <h2 className="text-2xl font-bold text-white">Input Your Graph</h2>
+        <p className="text-slate-300">Choose how you'd like to provide your DAG</p>
       </div>
 
       {/* Mode Selection */}
@@ -310,7 +310,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
                 `}>
                   <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-slate-600'}`} />
                 </div>
-                <span className={`font-semibold ${isActive ? 'text-blue-600' : 'text-slate-700'}`}>
+                <span className={`font-semibold ${isActive ? 'text-blue-400' : 'text-slate-300'}`}>
                   {m.label}
                 </span>
               </div>
@@ -382,7 +382,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
           <div className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Number of Nodes: {numNodes}
                 </label>
                 <input
@@ -397,7 +397,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Edge Probability: {edgeProbability.toFixed(2)}
                 </label>
                 <input
@@ -438,8 +438,8 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
                 <FileText className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="font-semibold text-slate-800">Graph Loaded</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-semibold text-white">Graph Loaded</p>
+                <p className="text-sm text-slate-300">
                   {graphStats ? (
                     <>{graphStats.nodes} nodes • {edges.length} edges • {graphStats.components} component{graphStats.components !== 1 ? 's' : ''}</>
                   ) : (
@@ -454,7 +454,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 title={showPreview ? "Hide preview" : "Show preview"}
               >
-                <Eye className={`w-5 h-5 ${showPreview ? 'text-blue-500' : 'text-slate-400'}`} />
+                <Eye className={`w-5 h-5 ${showPreview ? 'text-blue-400' : 'text-slate-300'}`} />
               </button>
               <button
                 onClick={clearEdges}
@@ -475,9 +475,9 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
               className="space-y-3"
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-700">Interactive Graph Preview</h3>
+                <h3 className="text-sm font-semibold text-white">Interactive Graph Preview</h3>
                 {loadingStats && (
-                  <span className="text-xs text-slate-500 animate-pulse">Loading stats...</span>
+                  <span className="text-xs text-slate-300 animate-pulse">Loading stats...</span>
                 )}
               </div>
               

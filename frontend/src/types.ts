@@ -16,6 +16,20 @@ export interface GraphMetrics {
   degree_distribution: Record<string, number>
   degree_entropy: number
   density: number
+  // Advanced Research Metrics
+  avg_degree: number
+  max_in_degree: number
+  max_out_degree: number
+  avg_path_length: number
+  diameter: number
+  transitivity: number
+  redundancy_ratio: number
+  compactness_score: number
+  efficiency_score: number
+  bottleneck_nodes: string[]
+  critical_path: string[]
+  strongly_connected_components: number
+  topological_complexity: number
 }
 
 export interface GraphData {
