@@ -15,9 +15,32 @@ from networkx.drawing.nx_agraph import graphviz_layout
 # DAG optimizer
 from src.dag_optimiser.dag_class import DAGOptimizer
 
+# --- Helper: aggregate_edge_classes ---
+def aggregate_edge_classes(df, source_col, target_col, class_col=None):
+    """
+    Collapse DataFrame rows into unique edges and collect classes per edge.
+    Returns:
+      edges: list of (u, v) tuples
+      edge_attrs: dict mapping (u, v) -> sorted list of classes
+    """
+    access_map = defaultdict(set)
+    for _, row in df.iterrows():
+        u = row[source_col]
+        v = row[target_col]
+        if class_col and class_col in df.columns:
+            c = row[class_col]
+            access_map[(u, v)].add(c)
+        else:
+            access_map[(u, v)]  # ensure key exists
+    edges = list(access_map.keys())
+    edge_attrs = {e: sorted(access_map[e]) for e in access_map}
+    return edges, edge_attrs
+
 # --- Session state persistence ---
 if "edges" not in st.session_state:
     st.session_state.edges = None
+if "edge_attrs" not in st.session_state:
+    st.session_state.edge_attrs = {}
 if "optimizer" not in st.session_state:
     st.session_state.optimizer = None
 if "did_optimize" not in st.session_state:
@@ -30,16 +53,12 @@ with st.sidebar:
     do_merge = st.checkbox("Merge Equivalent Nodes", value=True)
     optimize = st.button("Optimize")
     handle_cycles = st.selectbox(
-        "If cycles are detected:",
-        ["Show error", "Automatically remove cycles"],
-        index=0
+        "If cycles are detected:", ["Show error", "Automatically remove cycles"], index=0
     )
     st.markdown("---")
     st.subheader("🚀 Neo4j Export")
     graph_target = st.radio(
-        "Push which graph to Neo4j?",
-        ["Uploaded DAG", "Optimized DAG"],
-        index=1
+        "Push which graph to Neo4j?", ["Uploaded DAG", "Optimized DAG"], index=1
     )
     uri = st.text_input("Bolt/Neo4j+s URI", value="bolt://localhost:7687")
     usr = st.text_input("Username", value="neo4j")
@@ -53,147 +72,152 @@ mode = st.radio(
     ("Upload CSV or Excel", "Paste edge list", "Random DAG")
 )
 new_edges = []
+edge_attrs = {}
 
 # --- Input modes ---
 if mode == "Upload CSV or Excel":
     uploaded_file = st.file_uploader(
-        "Upload a CSV or Excel file with edge list (source → target)",
+        "Upload CSV/Excel with columns: source, target, classes(optional)",
         type=["csv", "xlsx"]
     )
     if uploaded_file:
-        # Load dataframe
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-        st.write("Preview of uploaded data:")
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
+        st.write("Preview:")
         st.dataframe(df.head())
 
-        # Optional report_name filter
+        # optional filters
         if "report_name" in df.columns:
-            selected_report = st.selectbox(
-                "Filter by report_name", df["report_name"].unique()
-            )
-            df = df[df["report_name"] == selected_report]
+            sel = st.selectbox("Filter by report_name", df['report_name'].unique())
+            df = df[df['report_name'] == sel]
 
-        # Classes filter placed in main UI
-        if "classes" in df.columns:
-            class_filter = st.multiselect(
-                "Filter by 'classes' column", df["classes"].unique(),
-                default=df["classes"].unique().tolist()
-            )
-            df = df[df["classes"].isin(class_filter)]
+        # classes filter
+        has_classes = 'classes' in df.columns
+        if has_classes:
+            cls_choices = df['classes'].unique().tolist()
+            sel_classes = st.multiselect("Include access classes", cls_choices, default=cls_choices)
+            df = df[df['classes'].isin(sel_classes)]
 
-        # Select source/target columns
+        # select columns
         cols = df.columns.tolist()
-        source_col = st.selectbox("Select Source Column", cols)
-        target_col = st.selectbox("Select Target Column", cols)
+        source_col = st.selectbox("Source Column", cols)
+        target_col = st.selectbox("Target Column", cols)
 
         if st.button("Build DAG"):
-            new_edges = list(zip(df[source_col], df[target_col]))
-            G = nx.DiGraph()
-            G.add_edges_from(new_edges)
-            st.info(
-                f"Uploaded DAG has {nx.number_weakly_connected_components(G)} weakly connected component(s)."
-            )
+            # aggregate edges and classes
+            new_edges, edge_attrs = aggregate_edge_classes(df, source_col, target_col, 'classes' if has_classes else None)
+
+            # show components
+            G0 = nx.DiGraph(new_edges)
+            comps = nx.number_weakly_connected_components(G0)
+            st.info(f"Uploaded DAG has {comps} weakly connected component(s).")
+
             # cycle handling
-            if not nx.is_directed_acyclic_graph(G):
+            if not nx.is_directed_acyclic_graph(G0):
                 if handle_cycles == "Show error":
-                    st.error(
-                        "The uploaded graph contains cycles and cannot be optimized as a DAG."
-                    )
-                    cycles = list(nx.simple_cycles(G))
-                    if cycles:
-                        st.warning("Detected cycles:")
-                        for cycle in cycles:
-                            st.text(" → ".join(map(str, cycle)) + f" → {cycle[0]}")
+                    st.error("Graph contains cycles—cannot optimize.")
+                    for cyc in nx.simple_cycles(G0):
+                        st.write(" → ".join(cyc) + " → " + cyc[0])
                     st.stop()
                 else:
-                    # remove one back-edge per cycle
-                    for cycle in list(nx.simple_cycles(G)):
-                        G.remove_edge(cycle[-1], cycle[0])
-                    new_edges = list(G.edges())
-            # initialize optimizer
+                    # Remove a minimal feedback arc set (approximation) so the graph becomes a DAG
+                    try:
+                        from networkx.algorithms.approximation import minimum_feedback_arc_set
+                        fas = minimum_feedback_arc_set(G0)
+                        G0.remove_edges_from(fas)
+                        st.info(f"Automatically removed {len(fas)} edge(s) to break cycles: {fas}")
+                    except ImportError:
+                        # Fallback – remove first real edge of each cycle
+                        for cyc in nx.simple_cycles(G0):
+                            cycle_edges = list(zip(cyc, cyc[1:] + [cyc[0]]))
+                            for u, v in cycle_edges:
+                                if G0.has_edge(u, v):
+                                    G0.remove_edge(u, v)
+                                    break
+                    new_edges = list(G0.edges())
+
+            # init optimizer
             try:
-                st.session_state.optimizer = DAGOptimizer(new_edges)
+                st.session_state.optimizer = DAGOptimizer(new_edges, edge_attrs)
                 st.session_state.edges = new_edges
+                st.session_state.edge_attrs = edge_attrs
                 st.session_state.did_optimize = False
-                st.success("✅ DAG built successfully.")
+                st.success("Built DAG successfully.")
             except Exception as e:
-                st.error(f"Error initializing DAG: {e}")
+                st.error(f"Init error: {e}")
 
 elif mode == "Paste edge list":
-    txt = st.text_area("One `A,B` per line")
-    if txt:
+    txt = st.text_area("One `source,target,classes` per line")
+    if st.button("Build DAG from text"):
+        rows = []
+        for line in txt.splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) >= 2:
+                rows.append({ 'source': parts[0], 'target': parts[1], 'classes': parts[2] if len(parts)>2 else None })
+        df = pd.DataFrame(rows)
+        new_edges, edge_attrs = aggregate_edge_classes(df, 'source', 'target', 'classes')
         try:
-            new_edges = [tuple(line.split(",")) for line in txt.splitlines() if line.strip()]
-            st.session_state.optimizer = DAGOptimizer(new_edges)
+            st.session_state.optimizer = DAGOptimizer(new_edges, edge_attrs)
             st.session_state.edges = new_edges
+            st.session_state.edge_attrs = edge_attrs
             st.session_state.did_optimize = False
-            st.success("✅ DAG parsed successfully.")
+            st.success("Built DAG from text.")
         except Exception as e:
-            st.error(f"Could not parse edges: {e}")
+            st.error(f"Init error: {e}")
 
-else:  # Random DAG
-    n = st.number_input("Number of nodes", min_value=2, value=6)
+else:
+    n = st.number_input("Node count", 2, 100, 6)
     p = st.slider("Edge probability", 0.0, 1.0, 0.3)
     if st.button("Generate Random DAG"):
-        nodes = list(map(str, range(n)))
+        access_map = defaultdict(set)
+        nodes = [str(i) for i in range(n)]
         for i in range(n):
-            for j in range(i + 1, n):
+            for j in range(i+1, n):
                 if random.random() < p:
-                    new_edges.append((nodes[i], nodes[j]))
-        st.session_state.optimizer = DAGOptimizer(new_edges)
+                    access_map[(nodes[i], nodes[j])]  # no classes
+        new_edges = list(access_map.keys())
+        edge_attrs = {e: [] for e in new_edges}
+        st.session_state.optimizer = DAGOptimizer(new_edges, edge_attrs)
         st.session_state.edges = new_edges
+        st.session_state.edge_attrs = edge_attrs
         st.session_state.did_optimize = False
-        st.success("✅ Random DAG generated.")
+        st.success("Generated random DAG.")
 
-# --- Guard: must have edges ---
+# guard
 if st.session_state.edges is None:
-    st.info("Specify or generate a DAG to get started.")
+    st.info("Specify or generate a DAG first.")
     st.stop()
-
 opt = st.session_state.optimizer
 
-# --- Optimization trigger from sidebar ---
+# optimize
 if optimize:
-    if opt:
-        if do_tr:    opt.transitive_reduction()
-        if do_merge: opt.merge_equivalent_nodes()
-        st.session_state.did_optimize = True
-        st.success("✅ Optimization complete!")
-    else:
-        st.warning("Load a valid DAG before optimizing.")
+    if do_tr: opt.transitive_reduction()
+    if do_merge: opt.merge_equivalent_nodes()
+    st.session_state.did_optimize = True
+    st.success("Optimization done.")
 
-# --- Neo4j push ---
+# push to Neo4j
 if push:
-    if st.session_state.did_optimize or graph_target == "Uploaded DAG":
-        graph_to_push = (
-            opt.graph if graph_target == "Optimized DAG" else opt.original_graph
-        )
-        try:
-            driver = GraphDatabase.driver(uri, auth=(usr, pwd))
-            def create_graph(tx):
-                for n in graph_to_push.nodes():
-                    tx.run("MERGE (n:Node {name: $name})", name=n)
-                for u, v in graph_to_push.edges():
-                    # Create relationships using safe parameter names
-                    tx.run(
-                        "MATCH (a:Node {name:$from_node}) MATCH (b:Node {name:$to_node})"
-                        " MERGE (a)-[:DEPENDS_ON]->(b)",
-                        from_node=u,
-                        to_node=v
-                    )
-            with driver.session() as session:
-                session.write_transaction(create_graph)
-            driver.close()
-            st.success("✅ Pushed to Neo4j")
-        except Exception as e:
-            st.error(f"Neo4j error: {e}")
-    else:
-        st.warning("Optimize first, or choose 'Uploaded DAG' for Neo4j.")
+    graph_to_push = opt.original_graph if graph_target == "Uploaded DAG" else opt.graph
+    try:
+        driver = GraphDatabase.driver(uri, auth=(usr, pwd))
+        def create_graph(tx):
+            for n in graph_to_push.nodes():
+                tx.run("MERGE (n:Node {name:$name})", name=n)
+            for u, v in graph_to_push.edges():
+                classes = st.session_state.edge_attrs.get((u, v), [])
+                tx.run(
+                    "MATCH (a:Node {name:$u}) MATCH (b:Node {name:$v})"
+                    " MERGE (a)-[r:DEPENDS_ON]->(b) SET r.classes=$classes",
+                    u=u, v=v, classes=classes
+                )
+        with driver.session() as session:
+            session.write_transaction(create_graph)
+        driver.close()
+        st.success("Pushed to Neo4j.")
+    except Exception as e:
+        st.error(f"Neo4j push error: {e}")
 
-# --- Post-optimization display ---
+# display
 if st.session_state.did_optimize:
     om = opt.evaluate_graph_metrics(opt.original_graph)
     nm = opt.evaluate_graph_metrics(opt.graph)
@@ -202,38 +226,54 @@ if st.session_state.did_optimize:
         "Original": list(om.values()),
         "Optimized": list(nm.values())
     })
-    st.subheader("📊 Metrics Comparison")
+    st.subheader("Metrics Comparison")
     st.dataframe(metrics_df)
 
-    st.subheader("🖼️ Graph Visualization")
+    st.subheader("Graph Visualization")
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    diffs = {k:(om[k], nm[k]) for k in om if om[k] != nm[k]}
-    diff_text = "\n".join(f"{k}: {a} → {b}" for k,(a,b) in diffs.items()) or "No changes"
-    for G, ax, title in [(opt.original_graph, axes[0], "Original"),
-                         (opt.graph, axes[1], "Optimized")]:
+    for G, ax, title in [(opt.original_graph, axes[0], "Original"), (opt.graph, axes[1], "Optimized")]:
         try:
-            pos = graphviz_layout(G, prog="dot")
+            pos = graphviz_layout(G, prog='dot')
         except:
             pos = nx.spring_layout(G, seed=1)
-        nx.draw(G, pos, with_labels=True, ax=ax,
-                node_color="lightblue" if title=="Original" else "lightgreen")
+        edge_colors = []
+        for u, v in G.edges():
+            cls = st.session_state.edge_attrs.get((u, v), [])
+            if 'Modify' in cls:
+                edge_colors.append('magenta')
+            elif 'Call_by' in cls:
+                edge_colors.append('gray')
+            else:
+                edge_colors.append('lightblue')
+        nx.draw(
+            G, pos, ax=ax, with_labels=True,
+            node_color='lightblue' if title == 'Original' else 'lightgreen',
+            edge_color=edge_colors
+        )
         ax.set_title(title)
-    fig.suptitle("Changed Metrics:\n" + diff_text, fontsize=10)
     st.pyplot(fig)
 
     meta = opt.metadata()
+    # make edge_attributes JSON‑serialisable (tuple keys → string)
+    if 'edge_attributes' in meta:
+        meta['edge_attributes'] = {f"{u}->{v}": cls for (u, v), cls in meta['edge_attributes'].items()}
+
     st.download_button(
-        "📥 Download metadata (JSON)",
+        "Download metadata (JSON)",
         data=json.dumps(meta, indent=2),
-        file_name=f"dag_metadata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        file_name=f"meta_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
         mime="application/json"
     )
+
     buf = BytesIO()
-    fig.savefig(buf, format="png")
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+
+    fig.savefig(buf, format='png')
     buf.seek(0)
     st.download_button(
-        "📥 Download visualization (PNG)",
+        "Download visualization (PNG)",
         data=buf,
-        file_name="dag_optimization.png",
+        file_name="graph.png",
         mime="image/png"
     )

@@ -1,12 +1,80 @@
-# Ignore all __pycache__ folders
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+env/
+.venv
 
-# Ignore all .pyc and .pyo files (compiled Python)
-*.pyc
-*.pyo
+# Environment variables
+.env
+*.env
+backend/.env
 
-# Ignore all __init__.py files everywhere
-__init__.py
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
 
-# Ignore a specific filename (e.g. xyz.py) anywhere in the project
-graph_metadata
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+test_*.py
+
+# Neo4j
+neo4j/
+
+# Research Papers (private)
+Research Papers/
+
+# Generated datasets
+DAG_Dataset/
+Benchmark_Results/
+
+# Generated files
+*.png
+*.jpg
+*.jpeg
+graph_metadata/
+graphs/
+
+# Temporary files
+tradeoff.docx
+
+# Scripts
+benchmark_dags.py
+generate_dag_dataset.py
+
+# Old documentation (moved to docs/)
+QUICK_START.md
+ADVANCED_RESEARCH_FEATURES.md
+RESEARCH_FEATURES_SUMMARY.md
