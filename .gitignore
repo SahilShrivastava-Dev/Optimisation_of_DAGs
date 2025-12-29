@@ -58,6 +58,7 @@ Benchmark_Results/
 *.jpeg
 graph_metadata/
 graphs/
+optimization_metadata.json
 
 # Temporary files
 tradeoff.docx
