@@ -70,7 +70,8 @@ graphs/
 # Temporary files
 tradeoff.docx
 
-# Scripts
+# Scripts (generation utilities - not for distribution)
+scripts/
 benchmark_dags.py
 generate_dag_dataset.py
 

@@ -11,7 +11,6 @@ dag-optimization-framework/
 ├── 📂 backend/              # Python FastAPI backend
 ├── 📂 frontend/             # React TypeScript frontend
 ├── 📂 src/                  # Core optimization algorithms
-├── 📂 scripts/              # Utility scripts for docs & benchmarks
 ├── 📂 docs/                 # Comprehensive documentation
 ├── 📂 utils/                # DAG generation utilities
 ├── 📂 notebooks/            # Jupyter notebooks (optional)
@@ -108,23 +107,6 @@ src/
   - `compute_layer_structure()`: Width and parallelism calculation
   - `compute_edge_criticality()`: Edge classification
   - `evaluate_graph_metrics()`: 13+ metrics calculation
-
-### Scripts (`scripts/`)
-
-Utility scripts for documentation generation and benchmarking.
-
-```
-scripts/
-├── README.md                      # Scripts documentation
-├── generate_documentation.py     # Generate complete guide DOCX
-├── generate_challenges_doc.py    # Generate challenges DOCX
-└── benchmark_dags.py             # Run 995-DAG benchmarks
-```
-
-**Key Scripts**:
-- **`generate_documentation.py`**: Creates `DAG_Optimizer_Complete_Guide.docx` with pip packaging info
-- **`generate_challenges_doc.py`**: Creates `Challenges_Faced.docx` with mathematical justifications
-- **`benchmark_dags.py`**: Tests optimization on 995+ DAGs and generates performance data
 
 ### Documentation (`docs/`)
 

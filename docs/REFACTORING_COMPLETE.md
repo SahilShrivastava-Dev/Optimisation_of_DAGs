@@ -32,8 +32,7 @@ Your codebase has been **successfully transformed** from a React application int
 - ✅ Updated `__init__.py` with proper exports and `__version__`
 - ✅ Added convenience function `optimize_dag()`
 - ✅ Updated `backend/main.py` imports
-- ✅ Moved scripts to `scripts/` folder
-- ✅ Created `scripts/README.md`
+- ✅ Moved scripts to `scripts/` folder (now gitignored - private utilities)
 
 **Result**: Clean package structure ready for pip!
 
