@@ -373,19 +373,20 @@ Validated on **995 synthetic DAGs** (10-500 nodes, 7 density categories):
 
 ---
 
-## 🎨 Interactive Demo Application
+## 🎨 Streamlit Demo Application (Optional)
 
-To help you **understand how the optimization works visually**, we've included a beautiful React + FastAPI demo application:
+To help you **understand how the optimization works visually**, we've included a simple Streamlit demo application:
 
 ### Demo Features
 
-- **📤 Multiple Input Methods**: CSV upload, text input, random generation, AI image extraction
-- **🎯 Real-Time Optimization**: See the graph transform before your eyes
-- **📊 Interactive Visualization**: Drag nodes, zoom, pan with physics simulation
-- **📈 Metrics Comparison**: Side-by-side comparison of before/after metrics
-- **🔬 Research Insights**: View all 25+ metrics with mathematical explanations
-- **📄 Export Reports**: Generate comprehensive DOCX research reports
-- **🤖 AI-Powered**: Extract DAGs from uploaded images using vision-language models
+- **📤 Multiple Input Methods**: CSV upload, text input, random generation, or ML workflow templates
+- **🎯 Real-Time Optimization**: See the graph transform with adaptive algorithm selection
+- **📊 Side-by-Side Visualization**: Compare original vs optimized graphs
+- **📈 Comprehensive Metrics**: View all 25+ research-grade metrics with explanations
+- **🔬 Advanced Analysis**: PERT/CPM critical path, layer analysis, edge criticality
+- **📄 Export Options**: Download metrics (Markdown), graphs (CSV/JSON), visualizations (PNG)
+- **🤖 ML Examples**: Pre-built templates for ML pipelines, LangGraph, distributed training
+- **🗄️ Neo4j Export**: Push graphs to Neo4j for advanced querying
 
 ### Running the Demo
 
@@ -394,37 +395,29 @@ To help you **understand how the optimization works visually**, we've included a
 git clone https://github.com/SahilShrivastava-Dev/Optimisation_of_DAGs.git
 cd Optimisation_of_DAGs
 
-# 2. Install backend dependencies
-pip install -r backend/requirements.txt
+# 2. Install library in editable mode
+pip install -e .
 
-# 3. Install frontend dependencies
-cd frontend
-npm install
-cd ..
+# 3. Install demo dependencies
+pip install -r requirements-demo.txt
 
-# 4. Start backend (Terminal 1)
-cd backend
-python main.py
+# 4. Run Streamlit app
+streamlit run app.py
 
-# 5. Start frontend (Terminal 2 - new terminal)
-cd frontend
-npm run dev
-
-# 6. Open browser
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:8000/docs
+# 5. Open browser
+# Streamlit will automatically open http://localhost:8501
 ```
 
-**Note**: The demo application is for **demonstration and educational purposes**. The core functionality is available as a pip-installable library (see [Installation](#-installation)).
+**Note**: The demo application is for **demonstration and educational purposes**. For production use, install the library with `pip install dagoptimizer` and use it directly in your code (see [Quick Start](#-quick-start)).
 
-### Demo Screenshot
+### Demo Highlights
 
-The demo app provides an intuitive interface to:
-- Upload your DAG (CSV, text, or image)
-- Visualize the original graph
-- Apply optimization algorithms
-- Compare metrics before/after
-- Export results and reports
+The Streamlit app provides an intuitive interface to:
+- **Load DAGs**: Upload CSV/Excel files, paste edge lists, generate random DAGs, or use ML workflow templates
+- **Visualize**: See before/after graph visualizations with hierarchical layouts
+- **Optimize**: Apply transitive reduction and node merging with one click
+- **Analyze**: View PERT/CPM critical paths, parallelism layers, and edge criticality
+- **Export**: Download comprehensive reports and optimized graphs in multiple formats
 
 ---
 

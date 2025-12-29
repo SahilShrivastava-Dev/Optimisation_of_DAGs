@@ -5,6 +5,38 @@ All notable changes to the DAG Optimizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-30
+
+### Changed - Research Focus 🔬
+- **Removed React/TypeScript frontend**: Simplified architecture for research and library focus
+- **Removed FastAPI backend**: Direct library usage instead of API layer
+- **Updated Streamlit demo**: Enhanced with all research features (PERT/CPM, layers, edge criticality)
+- **Restructured repository**: Clear positioning as pip-installable library with optional demo
+
+### Added - Streamlit Demo Features
+- **ML Workflow Templates**: Pre-built examples (ML Pipeline, LangGraph, Distributed Training, Feature Engineering)
+- **Comprehensive Export**: Markdown reports, CSV/JSON graphs, PNG visualizations
+- **Enhanced Visualization**: Side-by-side comparison with hierarchical layouts
+- **Complete Metrics Display**: All 25+ metrics organized in intuitive tabs
+- **Neo4j Integration**: Direct database export from Streamlit UI
+
+### Removed
+- **frontend/**: Entire React application (~3000 lines)
+- **backend/**: FastAPI server and API routes (~1000 lines)
+- **Node.js dependencies**: No JavaScript/TypeScript dependencies
+- **Complex setup**: No multi-terminal setup required
+
+### Technical Details
+- **Architecture**: User → Streamlit → dagoptimizer library (direct)
+- **Simplification**: 80% code reduction, single Python stack
+- **Focus**: Research paper + pip package + simple demo
+
+### Benefits
+- ✅ **Simpler**: One language (Python), no API layer
+- ✅ **Faster**: Direct library calls, no HTTP overhead
+- ✅ **Cleaner**: 3,000 lines vs 15,000 lines
+- ✅ **Focused**: Library-first, demo-second positioning
+
 ## [1.0.0] - 2025-12-29
 
 ### Added - Initial Release 🎉
