@@ -58,6 +58,7 @@ Benchmark_Results/
 *.jpeg
 graph_metadata/
 graphs/
+utils/
 optimization_metadata.json
 
 # Temporary files
