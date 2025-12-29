@@ -63,8 +63,10 @@ optimization_metadata.json
 # Temporary files
 tradeoff.docx
 
-# Scripts (generation utilities - not for distribution)
-scripts/
+# Notebooks (can be created from scripts)
+notebooks/
+
+# Temporary generation files (keep scripts/ for demo)
 benchmark_dags.py
 generate_dag_dataset.py
 
