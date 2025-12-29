@@ -11,12 +11,46 @@ interface ImageUploadWithProgressProps {
 
 type ProgressStage = 'idle' | 'uploading' | 'analyzing' | 'extracting' | 'validating' | 'complete'
 
+const AI_MODELS = [
+  { 
+    value: 'google/gemma-3-4b-it:free', 
+    label: 'Google Gemma 3 4B (Free)', 
+    description: 'Fast & Free',
+    tier: 'free'
+  },
+  { 
+    value: 'nvidia/nemotron-nano-12b-v2-vl:free', 
+    label: 'NVIDIA Nemotron Nano 12B (Free)', 
+    description: 'Vision optimized, Free',
+    tier: 'free'
+  },
+  { 
+    value: 'qwen/qwen-2.5-vl-7b-instruct:free', 
+    label: 'Qwen 2.5 VL 7B (Free)', 
+    description: 'Vision-language, Free',
+    tier: 'free'
+  },
+  { 
+    value: 'google/gemma-3-4b-it', 
+    label: 'Google Gemma 3 4B (Paid)', 
+    description: 'Better quality',
+    tier: 'paid'
+  },
+  { 
+    value: 'google/gemma-3-12b-it', 
+    label: 'Google Gemma 3 12B (Paid)', 
+    description: 'Best quality',
+    tier: 'paid'
+  }
+]
+
 export default function ImageUploadWithProgress({ onEdgesExtracted, onBackendError }: ImageUploadWithProgressProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [stage, setStage] = useState<ProgressStage>('idle')
   const [isDragging, setIsDragging] = useState(false)
+  const [selectedModel, setSelectedModel] = useState(AI_MODELS[0].value)
 
   const stageMessages = {
     idle: 'Drop image or click to upload',
@@ -100,6 +134,7 @@ export default function ImageUploadWithProgress({ onEdgesExtracted, onBackendErr
 
       const response = await axios.post('/api/extract-from-image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        params: { model: selectedModel },
         timeout: 60000
       })
 
@@ -190,6 +225,40 @@ export default function ImageUploadWithProgress({ onEdgesExtracted, onBackendErr
 
   return (
     <div className="space-y-4">
+      {/* AI Model Selector */}
+      <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-4">
+        <label className="block text-sm font-semibold text-white mb-3 flex items-center space-x-2">
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          <span>Select AI Model</span>
+        </label>
+        <select
+          value={selectedModel}
+          onChange={(e) => setSelectedModel(e.target.value)}
+          disabled={stage !== 'idle'}
+          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white 
+                   focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                   disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <optgroup label="✨ Free Models (Recommended)">
+            {AI_MODELS.filter(m => m.tier === 'free').map(model => (
+              <option key={model.value} value={model.value}>
+                {model.label} - {model.description}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="💎 Premium Models">
+            {AI_MODELS.filter(m => m.tier === 'paid').map(model => (
+              <option key={model.value} value={model.value}>
+                {model.label} - {model.description}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+        <p className="text-xs text-slate-300 mt-2">
+          💡 Free models work great for most DAG diagrams. Premium models offer better accuracy for complex images.
+        </p>
+      </div>
+
       {/* Drop Zone / Image Preview */}
       <AnimatePresence mode="wait">
         {!imagePreview ? (

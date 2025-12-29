@@ -78,3 +78,9 @@ generate_dag_dataset.py
 QUICK_START.md
 ADVANCED_RESEARCH_FEATURES.md
 RESEARCH_FEATURES_SUMMARY.md
+
+
+#Unused files
+graph_metadata/
+graphs/
+notebooks/

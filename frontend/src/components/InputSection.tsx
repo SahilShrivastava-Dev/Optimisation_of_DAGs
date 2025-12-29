@@ -25,6 +25,7 @@ const InputSection = ({ edges, setEdges, loading }: InputSectionProps) => {
   const [loadingStats, setLoadingStats] = useState(false)
   const [loadingImageExtraction, setLoadingImageExtraction] = useState(false)
   const [imageExtractionStatus, setImageExtractionStatus] = useState<any>(null)
+  const [backendError, setBackendError] = useState<any>(null)
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

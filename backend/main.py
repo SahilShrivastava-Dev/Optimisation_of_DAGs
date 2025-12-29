@@ -33,7 +33,7 @@ from neo4j import GraphDatabase
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.dag_optimiser.dag_class import DAGOptimizer
+from src.dagoptimizer.dag_class import DAGOptimizer
 
 app = FastAPI(title="DAG Optimizer API")
 
@@ -359,7 +359,8 @@ async def push_to_neo4j(request: Neo4jPushRequest):
 
 @app.post("/api/extract-from-image")
 async def extract_dag_from_image(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    model: str = None
 ):
     """Extract DAG structure from uploaded image"""
     tmp_path = None
@@ -418,8 +419,9 @@ async def extract_dag_from_image(
                 print(f"\n📤 Response: {json.dumps(response, indent=2)}")
                 return response
             
-            # Get model name from env or use default
-            model = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
+            # Get model from request or env or use default
+            if not model:
+                model = os.getenv("OPENROUTER_MODEL", "google/gemma-3-4b-it:free")
             
             print(f"\n🔑 OpenRouter API key found")
             print(f"🤖 Using model: {model}")

@@ -11,8 +11,9 @@ dag-optimization-framework/
 ├── 📂 backend/              # Python FastAPI backend
 ├── 📂 frontend/             # React TypeScript frontend
 ├── 📂 src/                  # Core optimization algorithms
+├── 📂 scripts/              # Utility scripts for docs & benchmarks
 ├── 📂 docs/                 # Comprehensive documentation
-├── 📂 utils/                # Utility scripts
+├── 📂 utils/                # DAG generation utilities
 ├── 📂 notebooks/            # Jupyter notebooks (optional)
 ├── 📂 Research Papers/      # Academic references (gitignored)
 ├── 📂 DAG_Dataset/          # Benchmark test cases (gitignored)
@@ -109,6 +110,23 @@ src/
   - `compute_edge_criticality()`: Edge classification
   - `evaluate_graph_metrics()`: 13+ metrics calculation
 
+### Scripts (`scripts/`)
+
+Utility scripts for documentation generation and benchmarking.
+
+```
+scripts/
+├── README.md                      # Scripts documentation
+├── generate_documentation.py     # Generate complete guide DOCX
+├── generate_challenges_doc.py    # Generate challenges DOCX
+└── benchmark_dags.py             # Run 995-DAG benchmarks
+```
+
+**Key Scripts**:
+- **`generate_documentation.py`**: Creates `DAG_Optimizer_Complete_Guide.docx` with pip packaging info
+- **`generate_challenges_doc.py`**: Creates `Challenges_Faced.docx` with mathematical justifications
+- **`benchmark_dags.py`**: Tests optimization on 995+ DAGs and generates performance data
+
 ### Documentation (`docs/`)
 
 Comprehensive project documentation.
@@ -184,18 +202,19 @@ Benchmark_Results/                # Test results (gitignored)
 ### Root Files
 
 ```
-📄 README.md                      # Main project README
-📄 CONTRIBUTING.md                # Contribution guidelines
-📄 CODE_OF_CONDUCT.md             # Community standards
-📄 LICENSE                        # MIT License
-📄 PROJECT_STRUCTURE.md           # This file
-📄 GITHUB_WIKI_GUIDE.md           # GitHub Wiki setup guide
-📄 .gitignore                     # Git exclusions
-📄 app.py                         # Legacy Streamlit app (deprecated)
-📄 requirements.txt               # Root Python dependencies
-📄 package.json                   # Root Node dependencies (unused)
-📄 tradeoff.docx                  # Algorithm tradeoff analysis
-📄 benchmark_dags.py              # Benchmark script
+📄 README.md                         # Main project README
+📄 CONTRIBUTING.md                   # Contribution guidelines
+📄 CODE_OF_CONDUCT.md                # Community standards
+📄 LICENSE                           # MIT License
+📄 PROJECT_STRUCTURE.md              # This file
+📄 GITHUB_WIKI_GUIDE.md              # GitHub Wiki setup guide
+📄 DOCUMENTATION_README.md           # Documentation index
+📄 .gitignore                        # Git exclusions
+📄 app.py                            # Legacy Streamlit app (deprecated)
+📄 requirements.txt                  # Root Python dependencies
+📄 tradeoff.docx                     # Algorithm tradeoff analysis
+📄 DAG_Optimizer_Complete_Guide.docx # Complete pip package guide
+📄 Challenges_Faced.docx             # Challenges & solutions document
 ```
 
 ### Batch Scripts (Windows)
