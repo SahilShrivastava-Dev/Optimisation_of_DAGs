@@ -31,5 +31,4 @@ recursive-exclude DAG_Dataset *
 recursive-exclude Benchmark_Results *
 recursive-exclude graph_metadata *
 recursive-exclude graphs *
-exclude *.bat
 

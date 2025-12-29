@@ -22,8 +22,7 @@ dag-optimization-framework/
 ├── 📄 CONTRIBUTING.md       # Contribution guidelines
 ├── 📄 CODE_OF_CONDUCT.md    # Community standards
 ├── 📄 LICENSE               # MIT License
-├── 📄 .gitignore            # Git exclusions
-└── 📄 *.bat                 # Windows batch scripts
+└── 📄 .gitignore            # Git exclusions
 ```
 
 ---
@@ -217,17 +216,6 @@ Benchmark_Results/                # Test results (gitignored)
 📄 Challenges_Faced.docx             # Challenges & solutions document
 ```
 
-### Batch Scripts (Windows)
-
-```
-📄 verify_setup.bat               # Check prerequisites
-📄 install_dependencies.bat       # Install all dependencies
-📄 install_frontend_only.bat      # Install frontend only
-📄 setup_openrouter.bat           # Setup AI API key
-📄 start_backend.bat              # Start FastAPI server
-📄 start_frontend.bat             # Start React dev server
-📄 start_all.bat                  # Start both servers
-```
 
 ---
 
@@ -235,7 +223,7 @@ Benchmark_Results/                # Test results (gitignored)
 
 ### For Users
 
-1. **Start Application**: `start_all.bat` (Windows) or manually start backend + frontend
+1. **Start Application**: Start backend and frontend in separate terminals (see README.md)
 2. **Read Documentation**: `README.md` → `docs/QUICK_START.md`
 3. **Setup AI Models**: `docs/OPENROUTER_SETUP.md`
 

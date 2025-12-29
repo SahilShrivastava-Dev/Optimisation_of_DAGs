@@ -24,12 +24,7 @@ npm install
 
 ### Step 3: Start the Application
 
-```bash
-# From project root
-start_all.bat
-```
-
-Or manually in two terminals:
+Open two terminals and run:
 
 **Terminal 1:**
 ```bash

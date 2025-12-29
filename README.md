@@ -394,13 +394,23 @@ To help you **understand how the optimization works visually**, we've included a
 git clone https://github.com/SahilShrivastava-Dev/Optimisation_of_DAGs.git
 cd Optimisation_of_DAGs
 
-# 2. Install dependencies (Windows)
-install_dependencies.bat
+# 2. Install backend dependencies
+pip install -r backend/requirements.txt
 
-# 3. Start both servers
-start_all.bat
+# 3. Install frontend dependencies
+cd frontend
+npm install
+cd ..
 
-# 4. Open browser
+# 4. Start backend (Terminal 1)
+cd backend
+python main.py
+
+# 5. Start frontend (Terminal 2 - new terminal)
+cd frontend
+npm run dev
+
+# 6. Open browser
 # Frontend: http://localhost:5173
 # Backend API: http://localhost:8000/docs
 ```
