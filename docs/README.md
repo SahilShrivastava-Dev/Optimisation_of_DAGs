@@ -52,9 +52,22 @@ For the main project overview, see [../README.md](../README.md)
 
 For contribution guidelines, see [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
-For the GitHub Wiki guide, see [../GITHUB_WIKI_GUIDE.md](../GITHUB_WIKI_GUIDE.md)
+## 📋 Project Documentation
 
-For project structure, see [../PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md)
+|| Document | Description |
+||----------|-------------|
+|| **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)** | Complete file organization |
+|| **[GITHUB_WIKI_GUIDE.md](./GITHUB_WIKI_GUIDE.md)** | GitHub Wiki setup instructions |
+|| **[PIP_PACKAGE_GUIDE.md](./PIP_PACKAGE_GUIDE.md)** | Complete API reference |
+|| **[BUILD_AND_PUBLISH.md](./BUILD_AND_PUBLISH.md)** | PyPI publishing guide |
+
+## 📝 Development Documentation
+
+|| Document | Description |
+||----------|-------------|
+|| **[REFACTORING_COMPLETE.md](./REFACTORING_COMPLETE.md)** | Pip package refactoring summary |
+|| **[PIP_PACKAGE_REFACTORING_SUMMARY.md](./PIP_PACKAGE_REFACTORING_SUMMARY.md)** | Detailed refactoring notes |
+|| **[CLEANUP_SUMMARY.md](./CLEANUP_SUMMARY.md)** | Codebase cleanup details |
 
 ---
 
