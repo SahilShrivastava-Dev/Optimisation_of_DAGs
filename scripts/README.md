@@ -107,6 +107,78 @@ Generates ML-focused research paper.
 
 ---
 
+## 📦 Publishing Scripts (PyPI Deployment)
+
+### **build_package.py**
+**Purpose:** Automates package building for PyPI deployment
+
+**What it does:**
+- ✅ Cleans old builds (dist/, build/, *.egg-info)
+- ✅ Verifies required files (setup.py, README.md, etc.)
+- ✅ Checks build dependencies (build, twine)
+- ✅ Builds distribution packages (.tar.gz, .whl)
+- ✅ Validates packages with twine
+
+**How to run:**
+```bash
+python scripts/build_package.py
+```
+
+**Output:**
+- `dist/dagoptimizer-1.0.0.tar.gz` (source distribution)
+- `dist/dagoptimizer-1.0.0-py3-none-any.whl` (wheel distribution)
+
+---
+
+### **publish_package.py**
+**Purpose:** Interactive script to upload package to PyPI
+
+**What it does:**
+- ✅ Checks for built distributions
+- ✅ Shows files to be uploaded
+- ✅ Confirms with user before uploading
+- ✅ Uploads to TestPyPI or PyPI
+- ✅ Provides next steps and verification
+
+**How to run:**
+```bash
+# Test upload (TestPyPI)
+python scripts/publish_package.py --test
+
+# Production upload (PyPI)
+python scripts/publish_package.py
+```
+
+**Requirements:**
+- PyPI account and API token
+- Built package (run build_package.py first)
+
+---
+
+### **quick_publish.py**
+**Purpose:** One-command build and publish
+
+**What it does:**
+- ✅ Builds package (runs build_package.py)
+- ✅ Optionally publishes (runs publish_package.py)
+- ✅ Handles complete workflow
+
+**How to run:**
+```bash
+# Build only
+python scripts/quick_publish.py
+
+# Build + test upload
+python scripts/quick_publish.py --test
+
+# Build + production upload
+python scripts/quick_publish.py --prod
+```
+
+**Recommended for:** Quick iterations, CI/CD pipelines
+
+---
+
 ## 📋 Running All Demos
 
 ### Quick Test (1-2 minutes)
