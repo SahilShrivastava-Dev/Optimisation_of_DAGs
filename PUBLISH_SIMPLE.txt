@@ -1,0 +1,52 @@
+================================================================================
+  SIMPLE PUBLISHING INSTRUCTIONS
+================================================================================
+
+STEP 1: Open Command Prompt
+   - Press Windows Key + R
+   - Type: cmd
+   - Press Enter
+
+STEP 2: Navigate to project folder
+   - Copy this command and paste in cmd:
+   
+cd C:\Users\sahil_shrivastava\Desktop\Personal\Codespace\Optimisation of DAGs
+
+STEP 3: Run upload command
+   - Copy this command and paste in cmd:
+   
+python -m twine upload dist/*
+
+STEP 4: Enter credentials when prompted
+   - Username: __token__
+   - Password: [Paste your PyPI token - starts with pypi-AgEI...]
+
+STEP 5: Wait for upload
+   - Should take 30-60 seconds
+   - You'll see "Uploading dagoptimizer-1.0.0..." messages
+
+STEP 6: Success!
+   - Look for "View at: https://pypi.org/project/dagoptimizer/..."
+   - Your package is now live!
+
+================================================================================
+
+TROUBLESHOOTING:
+
+If you get "python is not recognized":
+   Try: py -m twine upload dist/*
+
+If you get "No such file: dist/":
+   Run: python scripts/build_package.py
+   Then try again
+
+If you get "400 File already exists":
+   The package is already published! Check: https://pypi.org/project/dagoptimizer/
+
+If you get "403 Forbidden":
+   - Make sure username is exactly: __token__
+   - Make sure you copied the entire token
+   - Create new token at: https://pypi.org/manage/account/token/
+
+================================================================================
+

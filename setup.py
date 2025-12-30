@@ -19,7 +19,7 @@ def read_requirements():
 
 setup(
     name="dagoptimizer",
-    version="1.0.0",
+    version="1.0.1",
     author="Sahil Shrivastava",
     author_email="sahilshrivastava28@gmail.com",
     description="Advanced DAG optimization library with adaptive transitive reduction, PERT/CPM analysis, and 25+ research-grade metrics",
