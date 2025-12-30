@@ -7,9 +7,8 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/badge/pypi-v1.0.0-blue)](https://pypi.org/project/dagoptimizer/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Research Paper](https://img.shields.io/badge/research-paper-green.svg)](Research%20Papers/)
 
-**[Quick Start](#-quick-start)** • **[Installation](#-installation)** • **[Features](#-features)** • **[Demo App](#-interactive-demo-application)** • **[Research](#-research-paper)** • **[Documentation](#-documentation)**
+**[Quick Start](#-quick-start)** • **[Installation](#-installation)** • **[Features](#-features)** • **[Demo App](#-interactive-demo-application)** • **[Documentation](#-documentation)**
 
 </div>
 
@@ -17,7 +16,7 @@
 
 ## 🎯 What is DAG Optimizer?
 
-**DAG Optimizer** is an open-source Python library that provides state-of-the-art algorithms for optimizing Directed Acyclic Graphs (DAGs). Built on rigorous research and validated on 995 real-world test cases, it offers:
+**DAG Optimizer** is an open-source Python library that provides state-of-the-art algorithms for optimizing Directed Acyclic Graphs (DAGs). Validated on 995 real-world test cases, it offers:
 
 - **42.9% average edge reduction** while preserving 100% reachability
 - **Adaptive transitive reduction** (DFS for sparse, Floyd-Warshall for dense)
@@ -115,7 +114,6 @@ print(f"Graph Density: {metrics['density']:.3f}")
 - [Benchmark Results](#-benchmark-results)
 - [Interactive Demo Application](#-interactive-demo-application)
 - [API Reference](#-api-reference)
-- [Research Paper](#-research-paper)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -521,49 +519,11 @@ Quick optimization function with sensible defaults.
 
 ---
 
-## 📖 Research Paper
-
-This library is backed by rigorous research:
-
-**Title**: "Adaptive Algorithms for DAG Optimization: A Density-Aware Approach"  
-**Author**: Sahil Shrivastava (Independent Researcher)  
-**Email**: sahilshrivastava28@gmail.com
-
-### Key Contributions
-
-1. **Adaptive Algorithm Selection**: First library to dynamically select transitive reduction algorithm based on graph density
-2. **Comprehensive Metrics Suite**: 25+ research-grade metrics beyond basic NetworkX functionality
-3. **PERT/CPM Integration**: Critical path analysis integrated with graph optimization
-4. **Validated Results**: 995 test cases with statistical significance (p < 0.001, R² = 0.92)
-5. **Production-Ready**: Type hints, comprehensive tests, and documentation
-
-### Read the Full Paper
-
-- **Paper**: [Research Papers/DAG_Optimization_Sahil_Shrivastava_UPDATED.docx](Research%20Papers/)
-- **Wiki**: [GitHub Wiki](https://github.com/SahilShrivastava-Dev/Optimisation_of_DAGs/wiki)
-- **Benchmark Data**: [docs/BENCHMARK_SUMMARY.md](docs/BENCHMARK_SUMMARY.md)
-
-### Citation
-
-If you use this library in your research, please cite:
-
-```bibtex
-@software{shrivastava2025dagoptimizer,
-  author = {Shrivastava, Sahil},
-  title = {DAG Optimizer: Adaptive Algorithms for Directed Acyclic Graph Optimization},
-  year = {2025},
-  url = {https://github.com/SahilShrivastava-Dev/Optimisation_of_DAGs},
-  version = {1.0.0}
-}
-```
-
----
-
 ## 📚 Documentation
 
 - **[Quick Start](docs/QUICK_START.md)**: 5-minute setup guide
 - **[API Reference](#-api-reference)**: Complete API documentation (above)
-- **[Research Features](docs/RESEARCH_FEATURES_SUMMARY.md)**: Deep dive into advanced features
+- **[Advanced Features](docs/RESEARCH_FEATURES_SUMMARY.md)**: Deep dive into PERT/CPM, layer analysis, and edge criticality
 - **[Benchmark Results](docs/BENCHMARK_SUMMARY.md)**: Full 995-DAG benchmark data
 - **[Contributing](CONTRIBUTING.md)**: How to contribute to the project
 - **[Changelog](CHANGELOG.md)**: Version history and updates
@@ -622,7 +582,7 @@ Under the conditions of:
 ## 🙏 Acknowledgments
 
 - **NetworkX**: Core graph algorithms and data structures
-- **Research Papers**: Aho, Garey, Ullman (1972) - Transitive Reduction algorithms
+- **Algorithm References**: Aho, Garey, Ullman (1972) - Transitive Reduction algorithms
 - **Community**: All contributors and users who provide feedback
 
 ---
@@ -632,7 +592,7 @@ Under the conditions of:
 **Sahil Shrivastava**  
 📧 Email: sahilshrivastava28@gmail.com  
 🐙 GitHub: [@SahilShrivastava-Dev](https://github.com/SahilShrivastava-Dev)  
-🔗 LinkedIn: [Sahil Shrivastava](https://www.linkedin.com/in/sahil-shrivastava/)
+🔗 LinkedIn: [Sahil Shrivastava](https://www.linkedin.com/in/sahilshrivastava-dev/)
 
 ---
 
